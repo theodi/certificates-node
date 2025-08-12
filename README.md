@@ -73,24 +73,34 @@ The certificate view reads the survey’s `levels` to display the badge and desc
    ```
 
 3. **Environment Configuration**
-   Create a `.env` file:
+   Create a `.env` file (see `config.env.example`):
    ```env
    # MongoDB
    MONGO_URL=mongodb://localhost:27017/open_data_certificate
-   
+
    # MySQL (for migration)
-   MYSQL_HOST=localhost
+   MYSQL_HOST=127.0.0.1
    MYSQL_PORT=3306
-   MYSQL_DATABASE=open_data_certificate
+   MYSQL_DATABASE=certificates
    MYSQL_USER=root
-   MYSQL_PASSWORD=your_password
-   
+   MYSQL_PASSWORD=password
+
    # Server
    PORT=3000
    NODE_ENV=development
-   
-   # JWT (for authentication)
-   JWT_SECRET=your_jwt_secret
+
+   # Session Secret
+   SESSION_SECRET=your_session_secret
+
+   # ODI OAuth Credentials
+   DJANGO_CLIENT_ID=your_django_client_id
+   DJANGO_CLIENT_SECRET=your_django_client_secret
+   DJANGO_CALLBACK_URL=/auth/django/callback
+
+   # Google OAuth Credentials
+   GOOGLE_CLIENT_ID=your_google_client_id
+   GOOGLE_CLIENT_SECRET=your_google_client_secret
+   GOOGLE_CALLBACK_URL=/auth/google/callback
    ```
 
 4. **Database Setup**
@@ -273,12 +283,20 @@ docker build -t open-data-certificate .
 docker run -p 3000:3000 open-data-certificate
 ```
 
-### Environment Variables
+### Environment Variables (production example)
 ```env
 NODE_ENV=production
 MONGO_URL=mongodb://your-mongo-host:27017/open_data_certificate
 PORT=3000
-JWT_SECRET=your_production_jwt_secret
+SESSION_SECRET=your_production_session_secret
+
+# Optional: OAuth in production
+DJANGO_CLIENT_ID=...
+DJANGO_CLIENT_SECRET=...
+DJANGO_CALLBACK_URL=/auth/django/callback
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+GOOGLE_CALLBACK_URL=/auth/google/callback
 ```
 
 ## 🤝 Contributing
