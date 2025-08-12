@@ -1,0 +1,151 @@
+{
+  "name": "general",
+  "title": {
+      "default": "General Information",
+      "es": "Información General"
+  },
+  "elements": [
+      {
+          "type": "text",
+          "name": "dataTitle",
+          "title": {
+              "default": "What's this data called?",
+              "es": "¿Cómo se llama este conjunto de datos?"
+          },
+          "description": {
+              "default": "Provide an unambiguous and descriptive name for your data that identifies what's unique about it. This helps people quickly find your data and its certificate.",
+              "es": "Proporcione un nombre descriptivo y claro para sus datos que identifique qué los hace únicos. Esto ayuda a las personas a encontrar rápidamente sus datos y su certificado."
+          },
+          "isRequired": true,
+          "placeholder": {
+              "default": "Data Title",
+              "es": "Título del conjunto de datos"
+          },
+          "requirement": {
+              "level": 1,
+              "progressText": {
+                  "default": "You need to provide a title for your dataset",
+                  "es": "Debe proporcionar un título para su conjunto de datos"
+              }
+          }
+      },
+      {
+          "type": "text",
+          "name": "documentationUrl",
+          "title": {
+              "default": "Where is it described?",
+              "es": "¿Dónde se describe?"
+          },
+          "description": {
+              "default": "Link to the dataset you are certifying. By dataset we mean the documentation or metadata that describes the data as well as a link to the data file itself. Dataset = data + metadata.",
+              "es": "Enlace al conjunto de datos que está certificando. Por conjunto de datos nos referimos a la documentación o metadatos que describen los datos, así como un enlace al archivo de datos en sí. Conjunto de datos = datos + metadatos."
+          },
+          "inputType": "url",
+          "placeholder": {
+              "default": "Dataset URL",
+              "es": "URL del conjunto de datos"
+          },
+          "requirement": {
+              "level": 1,
+              "progressText": {
+                  "default": "You should have a web page that offers documentation about the open data you publish so that people can understand its context, content and utility.",
+                  "es": "Debe tener una página web que ofrezca documentación sobre los datos abiertos que publica para que las personas puedan entender su contexto, contenido y utilidad."
+              }
+          }
+      },
+      {
+          "type": "text",
+          "name": "publisher",
+          "title": {
+              "default": "Who publishes this data?",
+              "es": "¿Quién publica estos datos?"
+          },
+          "description": {
+              "default": "Give the name of the organisation who publishes this data. It's probably who you work for unless you're doing this on behalf of someone else.",
+              "es": "Indique el nombre de la organización que publica estos datos. Probablemente sea donde trabaja, a menos que lo haga en nombre de otra persona."
+          },
+          "isRequired": true,
+          "placeholder": {
+              "default": "Data Publisher",
+              "es": "Publicador de datos"
+          },
+          "requirement": {
+              "level": 1,
+              "progressText": {
+                  "default": "You should name the organisation who publishes this data.",
+                  "es": "Debe nombrar a la organización que publica estos datos."
+              }
+          }
+      },
+      {
+          "type": "text",
+          "name": "publisherUrl",
+          "title": {
+              "default": "What is the website of the publisher?",
+              "es": "¿Cuál es el sitio web del publicador?"
+          },
+          "description": {
+              "default": "Provide the URL for the publisher's website. This helps us to group data from the same organisation together, regardless of where the data is stored. E.g., for dataset on the Humanitarian Data Exchange, https://data.hdx.rwlabs.org/dataset/wfp-food-prices, the website of the publisher would be the World Food Programme site, http://www.wfp.org/ (and not https://data.hdx.rwlabs.org).",
+              "es": "Proporcione la URL del sitio web del publicador. Esto nos ayuda a agrupar datos de la misma organización, independientemente de dónde se almacenen los datos. Por ejemplo, para el conjunto de datos en Humanitarian Data Exchange, https://data.hdx.rwlabs.org/dataset/wfp-food-prices, el sitio web del publicador sería el sitio del Programa Mundial de Alimentos, http://www.wfp.org/ (y no https://data.hdx.rwlabs.org)."
+          },
+          "inputType": "url",
+          "placeholder": {
+              "default": "Publisher URL",
+              "es": "URL del publicador"
+          },
+          "requirement": {
+              "level": 1,
+              "progressText": {
+                  "default": "You should provide the URL of the publisher's website",
+                  "es": "Debe proporcionar la URL del sitio web del publicador"
+              }
+          }
+      },
+      {
+          "type": "radiogroup",
+          "name": "releaseType",
+          "title": {
+              "default": "What kind of release is this?",
+              "es": "¿Qué tipo de publicación es esta?"
+          },
+          "isRequired": true,
+          "choices": [
+              {
+                  "value": "oneoff",
+                  "text": {
+                      "default": "a one-off release of a single dataset",
+                      "es": "una publicación única de un conjunto de datos"
+                  }
+              },
+              {
+                  "value": "collection",
+                  "text": {
+                      "default": "a one-off release of a set of related datasets",
+                      "es": "una publicación única de un conjunto de datos relacionados"
+                  }
+              },
+              {
+                  "value": "series",
+                  "text": {
+                      "default": "ongoing release of a series of related datasets",
+                      "es": "publicación continua de una serie de conjuntos de datos relacionados"
+                  }
+              },
+              {
+                  "value": "service",
+                  "text": {
+                      "default": "a service or API for accessing open data",
+                      "es": "un servicio o API para acceder a datos abiertos"
+                  }
+              }
+          ],
+          "requirement": {
+              "level": 1,
+              "progressText": {
+                  "default": "You should specify the release schedule of the dataset",
+                  "es": "Debe especificar el cronograma de publicación del conjunto de datos"
+              }
+          }
+      }
+  ]
+}

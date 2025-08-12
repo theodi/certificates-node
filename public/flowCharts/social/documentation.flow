@@ -1,0 +1,48 @@
+flowchart TD
+    A[Documentation: How you help people understand your data] --> B{"Is there a URL for your data documentation?"}
+    B -->|Yes| C{"Does the documentation include machine-readable metadata for:"}
+
+    %% Metadata for Data Documentation
+    C -->|Title| D["Machine-readable title included."]
+    C -->|Description| E["Machine-readable description included."]
+    C -->|Release Date| F["Machine-readable release date included."]
+    C -->|Modification Date| G["Machine-readable modification date included."]
+    C -->|Frequency of Releases| H["Machine-readable release frequency included."]
+    C -->|Identifier| I["Canonical URL for the data included."]
+    C -->|Landing Page| J["Canonical URL to the documentation included."]
+    C -->|Language| K["Data language included."]
+    C -->|Publisher| L["Data publisher information included."]
+    C -->|Spatial Coverage| M["Geographic coverage included."]
+    C -->|Temporal Coverage| N["Temporal coverage included."]
+    C -->|Themes| O["Themes included."]
+    C -->|Keywords| P["Keywords or tags included."]
+    C -->|Distributions| Q{"Does the documentation include metadata for each data file?"}
+
+    %% Metadata for Distributions
+    Q -->|Yes| R{"Does the distribution metadata include:"}
+    R -->|Title| S["Machine-readable title for each distribution included."]
+    R -->|Description| T["Machine-readable description for each distribution included."]
+    R -->|Release Date| U["Machine-readable release date for each distribution included."]
+    R -->|Modification Date| V["Machine-readable modification date for each distribution included."]
+    R -->|Rights Statement| W["Rights statement included for each distribution."]
+    R -->|Access URL| X["URL to access the data included."]
+    R -->|Download URL| Y["URL to download the dataset included."]
+    R -->|Size in Bytes| Z["Size in bytes included."]
+    R -->|Media Type| AA["Media type included."]
+
+    %% Technical Documentation
+    A --> AB{"Where is the technical documentation for the data?"}
+    AB --> AC["Technical documentation URL provided."]
+    AB --> AD["Consider providing technical documentation to help technical users."]
+
+    %% Vocabularies and Schemas
+    A --> AE{"Do the data formats use vocabularies or schemas?"}
+    AE -->|Yes| AF{"Where is the vocabulary documentation?"}
+    AF --> AG["Vocabulary documentation URL provided."]
+    AE -->|No| AH["Consider using vocabularies or schemas to improve data clarity."]
+
+    %% Codes and Codelists
+    A --> AI{"Does the data use codes?"}
+    AI -->|Yes| AJ{"Where are the codes documented?"}
+    AJ --> AK["Codelist documentation URL provided."]
+    AI -->|No| AL["Consider documenting codes used in your data for better interpretability."]

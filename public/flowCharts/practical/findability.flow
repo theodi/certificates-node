@@ -1,0 +1,12 @@
+flowchart TD
+    A[Findability: How you help people find your data] --> B{"Is there a link to your data from your main website?"}
+    B -->|Yes| C{"Provide the URL of the web page linking to the data."}
+    B -->|No| E["Add a link to your data from your main website."]
+
+    A --> F{"Is your data listed within a collection?"}
+    F -->|Yes| G{"Provide the URL of the listing where your data is included."}
+    F -->|No| I["Register your data in relevant collections for better discoverability."]
+
+    A --> J{"Is this data referenced from your own publications?"}
+    J -->|Yes| K{"Provide the URL to a document or publication citing the data."}
+    J -->|No| M["Reference your data in publications to raise awareness and provide context."]

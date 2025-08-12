@@ -1,0 +1,24 @@
+{
+    "type": "panel",
+    "name": "quality",
+    "title": "Quality",
+    "description": "How much people can rely on your data",
+    "elements": [
+      {
+        "type": "text",
+        "name": "qualityUrl",
+        "title": "Where do you document issues with the quality of this data?",
+        "description": "Give a URL where people can find out about the quality of your data. People accept that errors are inevitable. You should be open about quality so people can judge how much to rely on this data.",
+        "inputType": "url",
+        "placeholder": "Data Quality Documentation URL"
+      },
+      {
+        "type": "text",
+        "name": "qualityControlUrl",
+        "title": "Where is your quality control process described?",
+        "description": "Give a URL for people to learn about ongoing checks on your data, either automatic or manual.",
+        "inputType": "url",
+        "placeholder": "Quality Control Process Description URL"
+      }
+    ]
+  }

@@ -1,0 +1,43 @@
+flowchart TD
+    A[Licensing: How you give people permission to use this data] --> B{"Where have you published the rights statement for this dataset?"}
+
+    A --> D{"Under which licence can people reuse this data?"}
+    D -->|Creative Commons or Standard Licence| E["Ensure licence details are clear and accessible."]
+    D -->|Not applicable| F{"Why doesn't a licence apply to this data?"}
+    F -->|No rights| G["Verify there are no database or copyright rights."]
+    F -->|Expired rights| H["Check if database or copyright rights have expired."]
+    F -->|Waived rights| I{"Which waiver do you use to waive rights in the data?"}
+    I -->|PDDL or CCZero| J["Ensure waiver statement is accessible."]
+    I -->|Other| K["Provide a URL to the custom waiver."]
+
+    D -->|Other Licence| L{"What is the name of the licence?"}
+    L --> M["Provide a URL to the custom licence."]
+    M --> N{"Is the licence open?"}
+    N -->|Yes| O["Confirm the licence meets Open Knowledge standards."]
+    N -->|No| P["Consider using an open licence for better reusability."]
+
+    A --> Q{"Is there any copyright in the content of this data?"}
+    Q -->|No rights| R{"Is the content marked as public domain?"}
+    R -->|Yes| S["Use public domain marks like CCZero."]
+    R -->|No| T["Consider marking content explicitly as public domain."]
+
+    Q -->|Same rights| U{"Under which licence can others reuse content?"}
+    U -->|Not applicable| V{"Why doesn't a licence apply to the content?"}
+    V -->|No rights| W["Verify there is no copyright in the content."]
+    V -->|Expired rights| X["Check if copyright for the content has expired."]
+    V -->|Waived rights| Y{"Which waiver do you use for the content?"}
+    Y -->|CCZero| Z["Ensure waiver details are accessible."]
+    Y -->|Other| AA["Provide a URL to the custom waiver."]
+
+    U -->|Other Licence| AB{"What's the name of the licence for the content?"}
+    U -->|Creative Commons or Standard Licence| AK["Ensure licence details are clear and accessible."]
+    AB --> AC["Provide a URL to the licence."]
+    AC --> AD{"Is the content licence open?"}
+    AD -->|Yes| AE["Confirm the content licence meets Open Knowledge standards."]
+    AD -->|No| AF["Consider using an open content licence."]
+
+    Q -->|Mixed rights| AG["Provide a URL describing the rights and licensing of the content."]
+
+    B --> AH{"Does the rights statement include machine-readable data?"}
+    AH -->|Yes| AI["Ensure rights statement includes metadata for licence, attribution, and copyright."]
+    AH -->|No| AJ["Consider adding machine-readable metadata for automated tools."]

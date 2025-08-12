@@ -1,0 +1,51 @@
+:root {
+    --primary: var(--color-dark-blue);
+}
+#surveyElement h4.sd-page__title span {
+    font-size: 2em;
+}
+#surveyElement h4.sd-panel__title span {
+    font-size: 24px;
+}
+#surveyElement .sd-boolean,
+#surveyElement .sd-boolean__thumb,
+#surveyElement .sd-boolean__thumb-ghost,
+#surveyElement .sd-boolean__switch {
+    border-radius: 0;
+}
+#surveyElement .sd-btn {
+    color: white;
+}
+#surveyElement .sd-btn:hover {
+    color: var(--primary);
+}
+#certificationProgress h4 {
+    margin-top: 10px;
+    font-size: 18px;
+    color: #333;
+}
+#certificationProgress p {
+    font-size: 14px;
+    color: #666;
+}
+#certificationProgress details {
+    margin-top: 10px;
+    background-color: var(--color-light-grey);
+}
+#certificationProgress summary {
+    cursor: pointer;
+    font-weight: bold;
+    color: var(--color-dark-blue);
+}
+.dropdown-content {
+    margin-top: 5px;
+    background-color: var(--color-light-grey);
+}
+.dropdown-content ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.dropdown-content li {
+    margin-bottom: 5px;
+}

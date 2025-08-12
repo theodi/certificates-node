@@ -1,0 +1,14 @@
+{
+    "name": "practical",
+    "title": {
+      "default": "Practical Information",
+      "es": "Testing"
+    },
+    "description": "Findability, accuracy, quality, and guarantees",
+    "elements": [
+      "practical/findability",
+      "practical/accuracy",
+      "practical/quality",
+      "practical/guarentees"
+    ]
+}

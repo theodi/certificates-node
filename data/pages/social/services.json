@@ -1,0 +1,39 @@
+{
+    "type": "panel",
+    "name": "services",
+    "title": {
+        "default": "Services",
+        "es": "Servicios"
+    },
+    "description": {
+        "default": "How you give people access to tools they need to work with your data",
+        "es": "Cómo proporciona a las personas acceso a las herramientas que necesitan para trabajar con sus datos"
+    },
+    "elements": [
+        {
+            "type": "text",
+            "name": "libraries",
+            "title": {
+                "default": "Where do you list tools to work with your data?",
+                "es": "¿Dónde enumera las herramientas para trabajar con sus datos?"
+            },
+            "inputType": "url",
+            "placeholder": {
+                "default": "Tool URL",
+                "es": "URL de la herramienta"
+            },
+            "description": {
+                "default": "Give a URL that lists the tools you know or recommend people can use when they work with your data.",
+                "es": "Proporcione una URL que enumere las herramientas que conoce o recomienda para trabajar con sus datos."
+            },
+            "requirement": {
+                "level": 4,
+                "progressText": {
+                    "default": "You should <strong>provide a list of software libraries and other readily-available tools</strong> so that people can quickly get to work with your data.",
+                    "es": "Debería <strong>proporcionar una lista de bibliotecas de software y otras herramientas disponibles</strong> para que las personas puedan comenzar a trabajar rápidamente con sus datos."
+                }
+            },
+            "isRequired": true
+        }
+    ]
+}

@@ -1,0 +1,58 @@
+<%- include('../../partials/header') %>
+<section class="content-block white">
+      <h1>
+        <script>
+          (function(){
+            const isMyPath = window.location.pathname.startsWith('/datasets/my');
+            const loggedIn = <%= user ? 'true' : 'false' %>;
+            document.currentScript.parentElement.textContent = (loggedIn || isMyPath) ? 'My Datasets' : 'Datasets';
+          })();
+        </script>
+      </h1>
+  <table id="responsesTable" class="display" style="width:100%">
+    <thead>
+      <tr>
+        <th>Dataset</th>
+        <th># of Certificates</th>
+        <th>Top Level</th>
+        <th>Updated</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</section>
+
+<link rel="stylesheet" href="/lib/DataTables/datatables.css" />
+<script src="/lib/DataTables/datatables.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const table = new DataTable('#responsesTable', {
+      ajax: (function(){
+        const loggedIn = <%= user ? 'true' : 'false' %>;
+        const isMyPath = window.location.pathname.startsWith('/datasets/my');
+        return (loggedIn || isMyPath) ? '/datasets/my/data' : '/datasets/data';
+      })(),
+      processing: true,
+      serverSide: false,
+      searching: true,
+      ordering: true,
+      responsive: true,
+      columns: [
+        { data: 'dataTitle', render: (d, t, row) => {
+            const url = row.webpage || '#';
+            const text = d || '(untitled)';
+            return url ? `<a href="${url}" target="_blank" rel="noopener">${text}</a>` : text;
+          }
+        },
+        { data: 'myCount' },
+        { data: 'levelLabel' },
+        { data: 'updatedAt', render: (d) => d ? new Date(d).toLocaleString() : '' },
+        { data: 'actions', render: (d) => `<a href="${d}">View certificates</a>` }
+      ]
+    });
+  });
+</script>
+<%- include('../../partials/footer') %>
+
+

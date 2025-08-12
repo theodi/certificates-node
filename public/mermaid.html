@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dynamic Mermaid Flowchart</title>
+</head>
+<body>
+  <h1>Certificates flowchart</h1>
+  <div class="mermaid" style="display: none;">
+  </div>
+  <script>
+    // Function to parse query parameters
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
+
+    // Function to load and render the flowchart
+    async function loadFlowchart() {
+      const section = getQueryParam('section'); // Get the section parameter
+      if (!section) {
+        document.querySelector('.mermaid').textContent = 'Error: No section specified in query parameters.';
+        return;
+      }
+
+      const flowchartFile = `/flowCharts/${section}.flow`; // Construct the file path
+      try {
+        const response = await fetch(flowchartFile); // Fetch the flowchart file
+        if (!response.ok) throw new Error(`Failed to load flowchart: ${response.statusText}`);
+        const flowchartDefinition = await response.text(); // Get the file content as text
+
+        const mermaidContainer = document.querySelector('.mermaid');
+        mermaidContainer.textContent = flowchartDefinition; // Inject the flowchart definition
+      } catch (error) {
+        document.querySelector('.mermaid').textContent = `Error: ${error.message}`;
+      }
+    }
+
+    // Load the flowchart when the DOM is ready
+    document.addEventListener('DOMContentLoaded', loadFlowchart);
+  </script>
+  <script type="module">
+      // Import Mermaid as a module
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ startOnLoad: false });
+      setTimeout(function() {
+        mermaid.run(); // Render the Mermaid diagram
+        document.querySelector('.mermaid').style.display = "block";
+      },200)
+
+  </script>
+</body>
+</html>

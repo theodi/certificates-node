@@ -1,0 +1,34 @@
+<%- include('../../partials/header') %>
+<section class="content-block white">
+  <h1>Certificates</h1>
+  <p>
+    <a href="/responses">← Back to Datasets</a>
+  </p>
+  <table id="certList" class="display" style="width:100%">
+    <thead>
+      <tr>
+        <th>State</th>
+        <th>Level</th>
+        <th>Created</th>
+        <th>Updated</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% certificates.forEach(function(c){ %>
+        <tr>
+          <td><%= c.state %></td>
+          <td><%= c.level %></td>
+          <td><%= c.createdAt ? new Date(c.createdAt).toLocaleString() : '' %></td>
+          <td><%= c.updatedAt ? new Date(c.updatedAt).toLocaleString() : '' %></td>
+          <td>
+            <a href="/<%= locale %>/datasets/<%= datasetId %>/certificates/<%= c.id %>" target="_blank" rel="noopener">View</a>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+<%- include('../../partials/footer') %>
+
+

@@ -1,0 +1,16 @@
+{
+    "name": "social",
+    "title": {
+      "default": "Social Information",
+      "es": "Testing"
+    },
+    "description": {
+      "default": "Documentation, support and services",
+      "es": "Testing"
+    },
+    "elements": [
+      "social/documentation",
+      "social/support",
+      "social/services"
+    ]
+}

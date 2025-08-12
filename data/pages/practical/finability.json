@@ -1,0 +1,104 @@
+{
+    "type": "panel",
+    "name": "findability",
+    "title": "Findability",
+    "description": "How you help people find your data",
+    "elements": [
+      {
+        "type": "boolean",
+        "name": "onWebsite",
+        "title": "Is there a link to your data from your main website?",
+        "description": "Data can be found more easily if it is linked to from your main website.",
+        "requirement": {
+          "level": 2,
+          "progressText": "You should <strong>ensure that people can find the data from your main website</strong> so that people can find it more easily."
+        }
+      },
+      {
+        "type": "paneldynamic",
+        "name": "websiteLinks",
+        "visibleIf": "{onWebsite} = true",
+        "title": "Which page on your website links to the data?",
+        "description": "Give a URL/s on your main website that includes a link to this data.",
+        "templateTitle": "Web Page #{panelIndex}",
+        "templateElements": [
+          {
+            "type": "text",
+            "name": "webPage",
+            "title": "Web Page URL",
+            "inputType": "url",
+            "isRequired": true,
+            "placeholder": "Enter the URL"
+          }
+        ],
+        "panelAddText": "Add another web page",
+        "panelRemoveText": "Remove this web page",
+        "allowAddPanel": true,
+        "allowRemovePanel": true
+      },
+      {
+        "type": "boolean",
+        "name": "listed",
+        "title": "Is your data listed within a collection?",
+        "description": "Answer yes if this dataset has been registered somewhere else (e.g., as part of a group or collection of related datasets). This helps make your data more discoverable.",
+        "requirement": {
+          "level": 2,
+          "progressText": "You should <strong>ensure that people can find your data when they search for it</strong> in locations that list data."
+        }
+      },
+      {
+        "type": "paneldynamic",
+        "name": "listingLinks",
+        "visibleIf": "{listed} = true",
+        "title": "Where is it listed?",
+        "description": "Give a URL where this data is listed within a relevant collection. For example, data.gov.uk (if it's UK public sector data), hub.data.ac.uk (if it's UK academia data), or a URL for search engine results.",
+        "templateTitle": "Web Page #{panelIndex}",
+        "templateElements": [
+          {
+            "type": "text",
+            "name": "listing",
+            "title": "Listing URL",
+            "inputType": "url",
+            "isRequired": true,
+            "placeholder": "Listing URL"
+          }
+        ],
+        "panelAddText": "Add another web page",
+        "panelRemoveText": "Remove this web page",
+        "allowAddPanel": true,
+        "allowRemovePanel": true
+      },
+      {
+        "type": "boolean",
+        "name": "referenced",
+        "title": "Is this data referenced from your own publications?",
+        "description": "Have you included direct links to this dataset in any of your own publications or communication channels? These could be reports, press releases, blog posts, presentations, or any publication that helps to provide context to your data and encourages people to discover and understand the data better.",
+        "requirement": {
+          "level": 2,
+          "progressText": "You should <strong>reference data from your own publications</strong> so that people are aware of its availability and context."
+        }
+      },
+      {
+        "type": "paneldynamic",
+        "name": "references",
+        "visibleIf": "{referenced} = true",
+        "title": "Where is your data referenced?",
+        "description": "Give URLs to documents that cite or reference this data.",
+        "templateTitle": "Reference #{panelIndex}",
+        "templateElements": [
+          {
+            "type": "text",
+            "name": "reference",
+            "title": "Reference URL",
+            "inputType": "url",
+            "isRequired": true,
+            "placeholder": "Enter the reference URL"
+          }
+        ],
+        "panelAddText": "Add another reference",
+        "panelRemoveText": "Remove this reference",
+        "allowAddPanel": true,
+        "allowRemovePanel": true
+      }
+    ]
+}

@@ -1,0 +1,16 @@
+{
+    "name": "technical",
+    "title": {
+      "default": "Technical Information",
+      "es": "Testing"
+    },
+    "description": {
+      "default": "Locations, formats and provenance",
+      "es": "Testing"
+    },
+    "elements": [
+      "technical/locations",
+      "technical/formats",
+      "technical/provenance"
+    ]
+}

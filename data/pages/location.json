@@ -1,0 +1,32 @@
+{
+    "name": "location",
+    "title": {
+        "default": "Dataset location",
+        "es": "Ubicación del conjunto de datos"
+    },
+    "elements": [
+        {
+            "type": "text",
+            "name": "dataSrc",
+            "title": {
+                "default": "Where is this data described?",
+                "es": "¿Dónde se describe este conjunto de datos?"
+            },
+            "description": {
+                "default": "Link to the dataset you are certifying. By dataset we mean the documentation or metadata that describes the data as well as a link to the data file itself. Dataset = data + metadata.\n\nIf your data is stored in a CKAN repository (such as data.gov.uk), or marked up with DCAT, then we will attempt to automatically answer some of the questions for you in the next step.",
+                "es": "Enlace al conjunto de datos que está certificando. Por conjunto de datos nos referimos a la documentación o metadatos que describen los datos, así como un enlace al archivo de datos en sí. Conjunto de datos = datos + metadatos.\n\nSi sus datos están almacenados en un repositorio CKAN (como data.gov.uk), o marcados con DCAT, intentaremos responder automáticamente algunas de las preguntas en el siguiente paso."
+            },
+            "placeholder": {
+                "default": "https://example.com/my-dataset",
+                "es": "https://ejemplo.com/mi-conjunto-de-datos"
+            },
+            "requirement": {
+                "level": 1,
+                "progressText": {
+                    "default": "You should have a <strong>web page that offers documentation</strong> about the open data you publish so that people can understand its context, content and utility.",
+                    "es": "Debería tener una <strong>página web que ofrezca documentación</strong> sobre los datos abiertos que publica para que las personas puedan comprender su contexto, contenido y utilidad."
+                }
+            }
+        }
+    ]
+}

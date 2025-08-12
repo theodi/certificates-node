@@ -1,0 +1,278 @@
+<%- include('../../partials/header') %>
+
+<section class="content-block white">
+  <style>
+    /* Hide bullets for the top-level certificate items */
+    .certificate-data > ul {
+      list-style: none;
+      padding-left: 0;
+      margin-left: 0;
+    }
+    /* Nested answer list should look like standard bullets */
+    .certificate-data .answer-list {
+      list-style: disc;
+      margin-left: 1.5em;
+      padding-left: 0.5em;
+    }
+    .certificate-data a {
+      color: black !important;
+    }
+
+    /* Two-column layout for summary (left) and content (right) */
+    .certificate-layout {
+      display: flex;
+      align-items: flex-start;
+      gap: 24px;
+      margin-top: 16px;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .summary-sidebar {
+      flex: 0 0 28%;
+      max-width: 360px;
+    }
+    .main-content {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+
+    /* Section items in two columns */
+    .certificate-data .section-items {
+      list-style: none;
+      padding-left: 0;
+      margin-left: 0;
+      columns: 2;
+      column-gap: 24px;
+    }
+    .certificate-data .section-items > li {
+      break-inside: avoid;
+      margin-bottom: 12px;
+      padding-left: 0;
+    }
+
+    /* Title lighter than the answer */
+    .certificate-data h4.item-title {
+      font-weight: 500;
+      margin: 0 0 6px 0;
+    }
+    .certificate-data .answer,
+    .certificate-data .answer-list li {
+      font-weight: 600;
+    }
+
+    @media (max-width: 900px) {
+      .certificate-layout { flex-direction: column; }
+      .summary-sidebar { flex: 1 1 auto; max-width: none; }
+      .certificate-data .section-items { columns: 1; }
+    }
+    .visually-hidden {
+      display: none;
+    }
+    .certificate {
+      border: 2px solid #333;
+      padding: 18px;
+      border-radius: 8px;
+      background: #faf9f6;
+      margin-bottom: 36px;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+      margin-top: 18px;
+    }
+    /* Watermark/diagonal lines when not published */
+    .certificate.watermarked { position: relative; overflow: hidden; }
+    .certificate.watermarked::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(45deg,
+        rgba(0,0,0,0.04) 0 12px,
+        rgba(0,0,0,0.00) 12px 24px);
+      pointer-events: none; z-index: 0;
+    }
+    .certificate.watermarked::before {
+      content: attr(data-watermark);
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%) rotate(-18deg);
+      font-size: 72px; font-weight: 800;
+      color: rgba(0,0,0,0.08); letter-spacing: 8px;
+      text-transform: uppercase; pointer-events: none; z-index: 0;
+      white-space: nowrap;
+    }
+    .certificate > * { position: relative; z-index: 1; }
+    .localle {
+      color: white;
+      background-color: var(--color-dark-blue);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .status {
+      color: var(--color-dark-blue);
+    }
+  </style>
+  <h1 class="visually-hidden"><%= dataTitle %></h1>
+  <% if (certificateState && certificateState !== 'published') { %>
+    <div style="background: var(--color-dark-blue); color:white; padding:12px 12px; border-radius:4px; margin-bottom:12px; text-align:center;">
+      This certificate is in <strong style="color:white;" ><%= certificateState %></strong> state.
+    </div>
+  <% } %>
+  <div class='certificate <%= (certificateState && certificateState !== 'published') ? "watermarked" : "" %>' data-watermark="<%= (certificateState && certificateState !== 'published') ? certificateState.toUpperCase() : '' %>">
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:6px; min-width: 100px;">
+        <% if (level && level.icon) { %>
+          <img src="/<%= level.icon %>" alt="<%= levelName %> badge" style="width: 80px; height: 80px; object-fit: contain;">
+        <% } %>
+        <div style="font-weight: 600; font-size: 24px; color:#333; text-align:center;"> <%= levelName %> </div>
+      </div>
+      <div>
+        <h2 style="margin: 0 0 12px 0; font-size: 28px;"><%= certificateTitle %></h2>
+        <div style="color: #666;">
+          <span class='badge localle'><%= jurisdiction %></span>
+          <span class='status'><%= status %></span>
+        </div>
+      </div>
+    </div>
+    <hr style="margin: 12px 0;">
+    <div>
+      <p style="margin: 6px 0; font-size: 18px;">
+        This certifies that the dataset
+        <strong>“<%= dataTitle %>”</strong>
+        published by <strong><%= publisher %></strong>
+        has attained the
+        <strong><%= levelName %></strong>
+        level on <%= new Date(createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }) %>.
+      </p>
+      <% if (level && level.description) { %>
+        <p style="margin: 6px 0; color: #444;"><%= level.description %></p>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="certificate-layout">
+    <aside class="summary-sidebar">
+      <% if (summary) { %>
+        <div class="summary-box" style="border: 1px solid #ccc; padding: 12px; border-radius: 6px; margin-top: 12px;">
+          <h3 style="margin-top: 0;">Summary</h3>
+          <ul style="list-style: none; padding-left: 0;">
+            <li>
+              <strong>Dataset title:</strong>
+              <% if ((summary.title || []).length > 1) { %>
+                <ul>
+                  <% (summary.title || []).forEach(function(ans){ %>
+                    <li><%= ans.text %></li>
+                  <% }) %>
+                </ul>
+              <% } else { %>
+                <% const t = (summary.title || [])[0]; %>
+                <span><%= t ? t.text : '' %></span>
+              <% } %>
+            </li>
+            <li>
+              <strong>Dataset URL:</strong>
+              <% if ((summary.url || []).length > 1) { %>
+                <ul>
+                  <% (summary.url || []).forEach(function(ans){ %>
+                    <li>
+                      <% if (ans.isLink) { %>
+                        <a href="<%= ans.text %>" target="_blank" rel="noopener"><%= ans.text %></a>
+                      <% } else { %>
+                        <%= ans.text %>
+                      <% } %>
+                    </li>
+                  <% }) %>
+                </ul>
+              <% } else { %>
+                <% const u = (summary.url || [])[0]; %>
+                <% if (u && u.isLink) { %>
+                  <a href="<%= u.text %>" target="_blank" rel="noopener"><%= u.text %></a>
+                <% } else { %>
+                  <span><%= u ? u.text : '' %></span>
+                <% } %>
+              <% } %>
+            </li>
+            <li>
+              <strong>License:</strong>
+              <% if ((summary.license || []).length > 1) { %>
+                <ul>
+                  <% (summary.license || []).forEach(function(ans){ %>
+                    <li>
+                      <% if (ans.isLink) { %>
+                        <a href="<%= ans.text %>" target="_blank" rel="noopener"><%= ans.text %></a>
+                      <% } else { %>
+                        <%= ans.text %>
+                      <% } %>
+                    </li>
+                  <% }) %>
+                </ul>
+              <% } else { %>
+                <% const lic = (summary.license || [])[0]; %>
+                <% if (lic && lic.isLink) { %>
+                  <a href="<%= lic.text %>" target="_blank" rel="noopener"><%= lic.text %></a>
+                <% } else { %>
+                  <span><%= lic ? lic.text : '' %></span>
+                <% } %>
+              <% } %>
+            </li>
+            <li>
+              <strong>Type of release:</strong>
+              <% if ((summary.releaseType || []).length > 1) { %>
+                <ul>
+                  <% (summary.releaseType || []).forEach(function(ans){ %>
+                    <li><%= ans.text %></li>
+                  <% }) %>
+                </ul>
+              <% } else { %>
+                <% const rel = (summary.releaseType || [])[0]; %>
+                <span><%= rel ? rel.text : '' %></span>
+              <% } %>
+            </li>
+          </ul>
+        </div>
+      <% } %>
+    </aside>
+    <div class="main-content">
+      <div class='certificate-data'>
+        <% sections.forEach(function(section){ %>
+          <hr class='heavy'>
+          <h3><%= section.title %></h3>
+          <ul class="section-items">
+            <% section.items.forEach(function(item){ %>
+              <li>
+                <h4 class="item-title"><%= item.title %></h4>
+                <% if ((item.answers || []).length > 1) { %>
+                  <ul class='answer-list'>
+                    <% item.answers.forEach(function(ans){ %>
+                      <li>
+                        <% if (ans.isLink) { %>
+                          <a href="<%= ans.text %>" class="cropped" target="_blank" rel="noopener"><%= ans.text %></a>
+                        <% } else { %>
+                          <%= ans.text %>
+                        <% } %>
+                      </li>
+                    <% }) %>
+                  </ul>
+                <% } else { %>
+                  <% const only = (item.answers || [])[0]; %>
+                  <p class='answer'>
+                    <% if (only && only.isLink) { %>
+                      <a href="<%= only.text %>" class="cropped" target="_blank" rel="noopener"><%= only.text %></a>
+                    <% } else { %>
+                      <%= only ? only.text : '' %>
+                    <% } %>
+                  </p>
+                <% } %>
+              </li>
+            <% }) %>
+          </ul>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<%- include('../../partials/footer') %>
+
+

@@ -1,0 +1,39 @@
+flowchart TD
+    A[Locations: How people can access your data] --> B{(From before) What is the release type?}
+
+    %% One-off Release
+    B -->|One-off| C{"Where is the data file located online?"}
+    C -->|Provided| D["Direct URL to the dataset is available."]
+    C -->|Not Provided| E{"Is documentation about the dataset available?"}
+    E -->|Yes| F["Documentation URL is available."]
+    E -->|No| G["You must provide either a dataset URL or documentation URL."]
+
+    %% Series Release
+    B -->|Series| H{"How do you publish a series of the same dataset?"}
+    H -->|Current Version| I{"Where is your current dataset?"}
+    I --> J["URL to the most recent dataset provided."]
+    H -->|Template| K{"What format do dataset release URLs follow?"}
+    K --> L["Consistent URL pattern for releases is defined."]
+    H -->|List| M{"Where is your list of dataset releases?"}
+    M --> N["URL to the dataset list or feed provided."]
+
+    %% Service Release
+    B -->|Service| O{"Where is the endpoint for your API?"}
+    O -->|Provided| P["API endpoint URL is available."]
+    O -->|Not Provided| Q{"Is documentation about the API available?"}
+    Q -->|Yes| R["API documentation URL is available."]
+    Q -->|No| S["You must provide either an API endpoint or documentation URL."]
+
+    %% Database Dumps for Service
+    O -->|Service includes database dumps| T{"How do you publish database dumps?"}
+    T -->|Current| U{"Where is the current database dump?"}
+    U --> V["URL to the most recent database dump provided."]
+    T -->|Template| W{"What format do database dump URLs follow?"}
+    W --> X["Consistent URL pattern for database dumps is defined."]
+    T -->|List| Y{"Where is your list of database dumps?"}
+    Y --> Z["URL to the list of database dumps provided."]
+
+    %% Change Feed for Any Type
+    A --> AA{" (From Before) Do you provide a feed of changes to this data?"}
+    AA -->|Yes| AB{"Where is your feed of changes?"}
+    AB --> AC["URL to the change feed provided."]

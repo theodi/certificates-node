@@ -1,0 +1,46 @@
+flowchart TD
+    A[Formats: How people can work with your data] --> B{"(OUT OF PLACE) Is this data machine-readable?"}
+    B -->|Yes| C{"Is this data in a standard open format?"}
+    B -->|No| D["You should provide data in a machine-readable format to improve usability."]
+    C -->|Yes| E["The data is in an open, machine-readable format."]
+    C -->|No| F["Consider using a standard open format to increase accessibility."]
+
+    %% Data Type
+    A --> G{"What kind of data is being provided as part of this dataset?"}
+    G -->|Documents| H{"What formats are your documents published in?"}
+    H -->|Semantic Format| I["Documents are published in a semantic format, improving reusability."]
+    H -->|Display Format| J["Documents are published in a display format, suitable for human consumption."]
+    H -->|Unsuitable Format| K["Consider publishing documents in a format designed for documents."]
+
+    G -->|Statistical| L{"What formats are your statistical data files published in?"}
+    L -->|Statistical Data Format| M["Statistical data is published in a format exposing dimensions and measures."]
+    L -->|Tabular Data Format| N["Statistical data is published in a tabular format, ensuring usability."]
+    L -->|Presentation Format| O["Consider using a tabular or statistical format for better processing."]
+    L -->|Unsuitable Format| P["Avoid unsuitable formats like PDFs for statistical data."]
+
+    G -->|Geographic| Q{"What formats are your geographic data files published in?"}
+    Q -->|Specific Format| R["Geographic data is published in a format designed for geographic information."]
+    Q -->|Generic Format| S["Geographic data is published in a generic structured format."]
+    Q -->|Unsuitable Format| T["Avoid unsuitable formats for geographic data, such as Word or PDF."]
+
+    G -->|Structured| U{"What formats are your structured data files published in?"}
+    U -->|Suitable Format| V["Structured data is published in a format designed for structured data."]
+    U -->|Unsuitable Format| W["Consider publishing structured data in a format suitable for its purpose."]
+
+    %% Identifiers
+    A --> X{"Does your data use persistent identifiers?"}
+    X -->|Yes| Y{"Can the identifiers in your data be used to find extra information?"}
+    X -->|No| Z["Consider using persistent identifiers to improve data linkage."]
+    Y -->|Service| AA{"Where is the identifier resolution service?"}
+    AA --> AB["URL to the identifier resolution service provided."]
+    Y -->|Resolvable| AC["Identifiers resolve to URLs that provide additional information."]
+    Y -->|No| AD["You should provide a service or URLs to resolve identifiers."]
+
+    %% External URLs
+    Y --> AE{"Is there third-party information about things in your data on the web?"}
+    AE -->|Yes| AF{"Is that third-party information reliable?"}
+    AF -->|Yes| AG{"Does your data use those third-party URLs?"}
+    AG -->|Yes| AH["Your data references reliable third-party URLs, improving linkage."]
+    AG -->|No| AI["Consider referencing reliable third-party URLs to improve usability."]
+    AF -->|No| AJ["Ensure third-party URLs used in your data are reliable."]
+    AE -->|No| AK["Consider identifying third-party information to improve usability."]

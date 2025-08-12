@@ -1,0 +1,12 @@
+{
+    "name": "legal",
+    "title": {
+        "default": "Legal Information"
+    },
+    "description": "Rights, licensing, and privacy",
+    "elements": [
+      "legal/ownership",
+      "legal/licensing",
+      "legal/privacy"
+    ]
+}

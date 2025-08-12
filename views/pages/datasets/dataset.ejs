@@ -1,0 +1,53 @@
+<%- include('../../partials/header') %>
+<section class="content-block white">
+  <h1>Certificates for Dataset</h1>
+  <p>
+    <a href="/datasets">← Back to Datasets</a>
+  </p>
+  <table id="certsTable" class="display" style="width:100%">
+    <thead>
+      <tr>
+        <th>State</th>
+        <th>Level</th>
+        <th>Created</th>
+        <th>Updated</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+</section>
+
+<link rel="stylesheet" href="/lib/DataTables/datatables.css" />
+<script src="/lib/DataTables/datatables.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const datasetId = '<%= datasetId %>';
+    const table = new DataTable('#certsTable', {
+      ajax: `/datasets/${datasetId}/data`,
+      processing: true,
+      serverSide: false,
+      searching: true,
+      ordering: true,
+      responsive: true,
+      columns: [
+        { data: 'stateLabel' },
+        { data: 'levelLabel' },
+        { data: 'createdAt', render: (d) => d ? new Date(d).toLocaleString() : '' },
+        { data: 'updatedAt', render: (d) => d ? new Date(d).toLocaleString() : '' },
+        { data: null, render: (row) => {
+            const viewLink = `<a href="${row.viewUrl}" target="_blank" rel="noopener">View</a>`;
+            if (row.state === 'draft') {
+              const editLink = `<a href="${row.editUrl}">Edit</a>`;
+              return `${viewLink} | ${editLink}`;
+            }
+            return viewLink;
+          }
+        }
+      ]
+    });
+  });
+  </script>
+<%- include('../../partials/footer') %>
+
+

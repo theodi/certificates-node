@@ -1,0 +1,155 @@
+{
+    "type": "panel",
+    "name": "privacy",
+    "title": "Privacy",
+    "description": "How you protect people's privacy",
+    "elements": [
+      {
+        "type": "radiogroup",
+        "name": "dataPersonal",
+        "title": "Can individuals be identified from this data?",
+        "isRequired": true,
+        "choices": [
+          { 
+            "value": "not-personal", 
+            "text": "No, the data is not about people or their activities",
+            "description": "Remember that individuals can still be identified even if data isn't directly about them. For example, road traffic flow data combined with an individual's commuting patterns could reveal information about that person."
+          },
+          { 
+            "value": "summarised", 
+            "text": "No, the data has been anonymised by aggregating individuals into groups, so they can't be distinguished from other people in the group",
+            "description": "Statistical disclosure controls can help to make sure that individuals are not identifiable within aggregate data."
+          },
+          { 
+            "value": "individual", 
+            "text": "Yes, there is a risk that individuals be identified, for example by third parties with access to extra information",
+            "description": "Some data is legitimately about individuals like civil service pay or public expenses for example."
+          }
+        ]
+      },
+      {
+        "type": "boolean",
+        "name": "statisticalAnonAudited",
+        "title": "Has your anonymisation process been independently audited?",
+        "visibleIf": "{dataPersonal} = 'summarised'",
+        "description": "It's good practice to make sure your process to remove personal identifiable data works properly. Independent audits by specialists or third-parties tend to be more rigorous and impartial.",
+        "requirement": {
+          "level": 2,
+          "requireTrue": true,
+          "progressText": "You should have your anonymisation process audited independently to ensure it reduces the risk of individuals being reidentified."
+        }
+      },
+      {
+        "type": "boolean",
+        "name": "appliedAnon",
+        "title": "Have you attempted to reduce or remove the possibility of individuals being identified?",
+        "visibleIf": "{dataPersonal} = 'individual'",
+        "description": "Anonymisation reduces the risk of individuals being identified from the data you publish. The best technique to use depends on the kind of data you have."
+      },
+      {
+        "type": "boolean",
+        "name": "lawfulDisclosure",
+        "title": "Are you required or permitted by law to publish this data about individuals?",
+        "visibleIf": "{dataPersonal} = 'individual' and {appliedAnon} = false",
+        "description": "The law might require you to publish data about people, such as the names of company directors. Or you might have permission from the affected individuals to publish information about them.",
+        "requirement": {
+          "level": 1,
+          "requireTrue": true,
+          "progressText": "You should only publish personal data without anonymisation if you are required or permitted to do so by law."
+        }
+      },
+      {
+        "type": "text",
+        "name": "lawfulDisclosureURL",
+        "title": "Where do you document your right to publish data about individuals?",
+        "inputType": "url",
+        "placeholder": "Disclosure Rationale URL",
+        "visibleIf": "{dataPersonal} = 'individual' and {appliedAnon} = false and {lawfulDisclosure} = true",
+        "description": "Give a URL for a page that describes the risk of using this data.",
+        "requirement": {
+          "level": 2,
+          "progressText": "You should document your right to publish data about individuals for people who use your data and for those affected by disclosure."
+        }
+      },
+      {
+        "type": "boolean",
+        "name": "privacyImpactAssessmentExists",
+        "title": "Have you carried out a Privacy Impact Assessment?",
+        "visibleIf": "{dataPersonal} = 'individual' and ({appliedAnon} = true or {lawfulDisclosure} = true)",
+        "description": "A Privacy Impact Assessment is how you measure risks to the privacy of individuals in your data as well as the use and disclosure of that information.",
+        "requirement": {
+          "level": 1,
+          "requireTrue": true,
+          "progressText": "You should do a Privacy Impact Assessment if you publish data about individuals."
+        }
+      },
+      {
+        "type": "text",
+        "name": "privacyImpactAssessmentUrl",
+        "title": "Where is your Privacy Impact Assessment published?",
+        "inputType": "url",
+        "placeholder": "Privacy Impact Assessment URL",
+        "visibleIf": "{dataPersonal} = 'individual' and ({appliedAnon} = true or {lawfulDisclosure} = true) and {privacyImpactAssessmentExists} = true",
+        "description": "Give a URL to where people can check how you have assessed the privacy risks to individuals. This may be redacted or summarised if it contains sensitive information.",
+        "requirement": {
+          "level": 2,
+          "progressText": "You should publish your Privacy Impact Assessment so people can understand how you have assessed the risks of disclosing data."
+        }
+      },
+      {
+        "type": "boolean",
+        "name": "piaAudited",
+        "title": "Has your Privacy Impact Assessment been independently audited?",
+        "visibleIf": "{dataPersonal} = 'individual' and ({appliedAnon} = true or {lawfulDisclosure} = true) and {privacyImpactAssessmentExists} = true and {privacyImpactAssessmentUrl} != ''",
+        "description": "It's good practice to check your assessment was done correctly. Independent audits by specialists or third-parties tend to be more rigorous and impartial.",
+        "requirement": {
+          "level": 2,
+          "requireTrue": true,
+          "progressText": "You should have your Privacy Impact Assessment audited independently to ensure it has been carried out correctly."
+        }
+      },
+      {
+        "type": "text",
+        "name": "individualConsentURL",
+        "title": "Where is the privacy notice for individuals affected by your data?",
+        "inputType": "url",
+        "placeholder": "Privacy Notice URL",
+        "visibleIf": "{dataPersonal} = 'individual' and ({appliedAnon} = true or {lawfulDisclosure} = true) and {privacyImpactAssessmentExists} = true and {lawfulDisclosure} != true",
+        "description": "When you collect data about individuals you must tell them how that data will be used. People who use your data need this to make sure they comply with the Data Protection Act.",
+        "requirement": {
+          "level": 1,
+          "progressText": "You should tell people what purposes the individuals in your data consented to you using their data for. So that they use your data for the same purposes and comply with the Data Protection Act."
+        }
+      },
+      {
+        "type": "boolean",
+        "name": "dpStaff",
+        "title": "Is there someone in your organisation who is responsible for data protection?",
+        "visibleIf": "{dataPersonal} = 'individual' and ({appliedAnon} = true or {lawfulDisclosure} = true) and {privacyImpactAssessmentExists} = true"
+      },
+      {
+        "type": "boolean",
+        "name": "dbStaffConsulted",
+        "title": "Have you involved them in the Privacy Impact Assessment process?",
+        "visibleIf": "{dataPersonal} = 'individual' and ({appliedAnon} = true or {lawfulDisclosure} = true) and {privacyImpactAssessmentExists} = true and {dpStaff} = true",
+        "description": "It's good practice to involve data protection specialists in privacy assessments.",
+        "requirement": {
+          "level": 1,
+          "requireTrue": true,
+          "progressText": "You should involve the person responsible for data protection in your organisation before you publish this data."
+        }
+      },
+      {
+        "type": "boolean",
+        "name": "anonymisationAudited",
+        "title": "Has your anonymisation approach been independently audited?",
+        "visibleIf": "{dataPersonal} = 'individual' and ({appliedAnon} = true or {lawfulDisclosure} = true) and {privacyImpactAssessmentExists} = true",
+        "description": "It is good practice to make sure your process to remove personal identifiable data works properly. Independent audits by specialists or third-parties tend to be more rigorous and impartial.",
+        "requirement": {
+          "level": 2,
+          "requireTrue": true,
+          "progressText": "You should have your anonymisation process audited independently by an expert to ensure it is appropriate for your data."
+        }
+      }
+    ]
+}

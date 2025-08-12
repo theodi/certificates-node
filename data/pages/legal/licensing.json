@@ -1,0 +1,272 @@
+{
+    "type": "panel",
+    "name": "licensing",
+    "title": "Licensing",
+    "description": "How you give people permission to use this data",
+    "elements": [
+      {
+        "type": "text",
+        "name": "copyrightURL",
+        "title": "Where have you published the rights statement for this dataset?",
+        "inputType": "url",
+        "placeholder": "Rights Statement URL",
+        "description": "Give the URL to a page that describes the right to re-use this dataset. This should include a reference to its license, attribution requirements, and a statement about relevant copyright and database rights. A rights statement helps people understand what they can and can't do with the data.",
+        "requirement": {
+          "level": 1,
+          "progressText": "Publish a rights statement that details copyright, database rights, licensing and how people should give attribution to the data."
+        }
+      },
+      {
+        "type": "dropdown",
+        "name": "dataLicence",
+        "title": "Under which licence can people reuse this data?",
+        "isRequired": true,
+        "choices": [
+          { "value": "cc-by", "text": "Creative Commons Attribution" },
+          { "value": "cc-by-sa", "text": "Creative Commons Attribution Share-Alike" },
+          { "value": "cc-zero", "text": "Creative Commons CCZero" },
+          { "value": "ogl-uk", "text": "UK Open Government Licence" },
+          { "value": "odc-by", "text": "Open Data Commons Attribution License" },
+          { "value": "odc-odbl", "text": "Open Data Commons Open Database License (ODbL)" },
+          { "value": "odc-pddl", "text": "Open Data Commons Public Domain Dedication and Licence (PDDL)" },
+          { "value": "na", "text": "Not applicable" },
+          { "value": "other", "text": "Other..." }
+        ],
+        "description": "Remember that whoever originally gathers, creates, verifies or presents a database automatically gets rights over it. There may also be copyright in the organisation and selection of data. So people need a waiver or a licence which proves that they can use the data and explains how they can do that legally."
+      },
+      {
+        "type": "radiogroup",
+        "name": "dataNotApplicable",
+        "title": "Why doesn't a licence apply to this data?",
+        "isRequired": true,
+        "visibleIf": "{dataLicence} = 'na'",
+        "choices": [
+          { 
+            "value": "norights", 
+            "text": "There are no copyright or database rights in this data",
+            "description": "Database rights apply if you spent substantial effort gathering, verifying or presenting it. There are no database rights if, for example, the data is created from scratch, presented in an obvious way, and not checked against anything."
+          },
+          { 
+            "value": "expired", 
+            "text": "Copyright and database rights have expired",
+            "description": "Database rights last ten years. If data was last changed over ten years ago then database rights have expired. Copyright lasts for a fixed amount of time, based on either the number of years after the death of its creator or its publication."
+          },
+          { 
+            "value": "waived", 
+            "text": "Copyright and database rights have been waived",
+            "description": "This means no one owns the rights and anyone can do whatever they want with this data."
+          }
+        ]
+      },
+      {
+        "type": "dropdown",
+        "name": "dataWaiver",
+        "title": "Which waiver do you use to waive rights in the data?",
+        "isRequired": true,
+        "visibleIf": "{dataLicence} = 'na' and {dataNotApplicable} = 'waived'",
+        "choices": [
+          { "value": "pddl", "text": "Open Data Commons Public Domain Dedication and Licence (PDDL)" },
+          { "value": "cc0", "text": "Creative Commons CCZero" },
+          { "value": "other", "text": "Other..." }
+        ],
+        "description": "You need a statement to show people the rights have been waived so that they understand they can do whatever they like with this data. Standard waivers already exist like PDDL and CCZero but you can write your own with legal advice."
+      },
+      {
+        "type": "text",
+        "name": "dataOtherWaiver",
+        "title": "Where is the waiver for the rights in the data?",
+        "inputType": "url",
+        "placeholder": "Waiver URL",
+        "isRequired": true,
+        "visibleIf": "{dataLicence} = 'na' and {dataNotApplicable} = 'waived' and {dataWaiver} = 'other'",
+        "description": "Give a URL to the publicly available waiver so people can check that it does waive the rights in the data."
+      },
+      {
+        "type": "text",
+        "name": "otherDataLicenceName",
+        "title": "What is the name of the licence?",
+        "isRequired": true,
+        "visibleIf": "{dataLicence} = 'other'",
+        "description": "If you use a different licence, we need the name so people can see it on your Open Data Certificate."
+      },
+      {
+        "type": "text",
+        "name": "otherDataLicenceURL",
+        "title": "Where is the licence?",
+        "inputType": "url",
+        "placeholder": "Other Licence URL",
+        "isRequired": true,
+        "visibleIf": "{dataLicence} = 'other'",
+        "description": "Give a URL to the licence, so people can see it on your Open Data Certificate and check that it's publicly available."
+      },
+      {
+        "type": "boolean",
+        "name": "otherDataLicenceOpen",
+        "title": "Is the licence an open licence?",
+        "isRequired": true,
+        "visibleIf": "{dataLicence} = 'other'",
+        "description": "If you aren't sure what an open licence is then read the Open Knowledge Definition. Next, choose your licence from the Open Definition Advisory Board open licence list. If a licence isn't in their list, it's either not open or hasn't been assessed yet.",
+        "requirement": {
+          "level": 1,
+          "requireTrue": true,
+          "progressText": "You must publish open data under an open licence so that people can use it."
+        }
+      },
+      {
+        "type": "radiogroup",
+        "name": "contentRights",
+        "title": "Is there any copyright in the content of this data?",
+        "isRequired": true,
+        "choices": [
+          { 
+            "value": "norights", 
+            "text": "No, the data only contains facts and numbers",
+            "description": "There is no copyright in factual information. If the data does not contain any content that was created through intellectual effort, there are no rights in the content."
+          },
+          { 
+            "value": "samerights", 
+            "text": "Yes, and the rights are all held by the same person or organisation",
+            "description": "Choose this option if the content in the data was all created by or transferred to the same person or organisation."
+          },
+          { 
+            "value": "mixedrights", 
+            "text": "Yes, and the rights are held by different people or organisations",
+            "description": "In some data, the rights in different records are held by different people or organisations. Information about rights needs to be kept in the data too."
+          }
+        ]
+      },
+      {
+        "type": "boolean",
+        "name": "explicitWaiver",
+        "title": "Is the content of the data marked as public domain?",
+        "visibleIf": "{contentRights} = 'norights'",
+        "description": "Works in the public domain are those whose intellectual property rights have expired, have been forfeited, or are inapplicable. If none of the content of your data have copyright or other rights over it, it is good practice to explicitly state this by labelling it as 'public domain'.",
+        "requirement": {
+          "level": 2,
+          "requireTrue": true,
+          "progressText": "You should mark public domain content as public domain so that people know they can reuse it."
+        }
+      },
+      {
+        "type": "dropdown",
+        "name": "contentLicence",
+        "title": "Under which licence can others reuse content?",
+        "isRequired": true,
+        "visibleIf": "{contentRights} = 'samerights'",
+        "choices": [
+          { "value": "cc-by", "text": "Creative Commons Attribution" },
+          { "value": "cc-by-sa", "text": "Creative Commons Attribution Share-Alike" },
+          { "value": "cc-zero", "text": "Creative Commons CCZero" },
+          { "value": "ogl-uk", "text": "UK Open Government Licence" },
+          { "value": "na", "text": "Not applicable" },
+          { "value": "other", "text": "Other..." }
+        ],
+        "description": "Remember that whoever spends intellectual effort creating content automatically gets rights over it but creative content does not include facts. So people need a waiver or a licence which proves that they can use the content and explains how they can do that legally."
+      },
+      {
+        "type": "radiogroup",
+        "name": "contentNotApplicable",
+        "title": "Why doesn't a licence apply to the content of the data?",
+        "isRequired": true,
+        "visibleIf": "{contentRights} = 'samerights' and {contentLicence} = 'na'",
+        "choices": [
+          { 
+            "value": "norights", 
+            "text": "There is no copyright in the content of this data",
+            "description": "Copyright only applies to content if you spent intellectual effort creating it, for example, by writing text that's within the data. There's no copyright if the content only contains facts."
+          },
+          { 
+            "value": "expired", 
+            "text": "Copyright has expired",
+            "description": "Copyright lasts for a fixed amount of time, based on either the number of years after the death of its creator or its publication. You should check when the content was created or published because if that was a long time ago, copyright might have expired."
+          },
+          { 
+            "value": "waived", 
+            "text": "Copyright has been waived",
+            "description": "This means no one owns copyright and anyone can do whatever they want with this data."
+          }
+        ]
+      },
+      {
+        "type": "dropdown",
+        "name": "contentWaiver",
+        "title": "Which waiver do you use to waive copyright?",
+        "isRequired": true,
+        "visibleIf": "{contentRights} = 'samerights' and {contentLicence} = 'na' and {contentNotApplicable} = 'waived'",
+        "choices": [
+          { "value": "cc0", "text": "Creative Commons CCZero" },
+          { "value": "other", "text": "Other..." }
+        ],
+        "description": "You need a statement to show people you've done this, so they understand that they can do whatever they like with this data. Standard waivers already exist like CCZero but you can write your own with legal advice."
+      },
+      {
+        "type": "text",
+        "name": "contentOtherWaiver",
+        "title": "Where is the waiver for the copyright?",
+        "inputType": "url",
+        "placeholder": "Waiver URL",
+        "isRequired": true,
+        "visibleIf": "{contentRights} = 'samerights' and {contentLicence} = 'na' and {contentNotApplicable} = 'waived' and {contentWaiver} = 'other'",
+        "description": "Give a URL to your own publicly available waiver so people can check that it does waive your copyright."
+      },
+      {
+        "type": "text",
+        "name": "otherContentLicenceName",
+        "title": "What's the name of the licence?",
+        "isRequired": true,
+        "visibleIf": "{contentRights} = 'samerights' and {contentLicence} = 'other'",
+        "description": "If you use a different licence, we need its name so people can see it on your Open Data Certificate."
+      },
+      {
+        "type": "text",
+        "name": "otherContentLicenceURL",
+        "title": "Where is the licence?",
+        "inputType": "url",
+        "placeholder": "Licence URL",
+        "isRequired": true,
+        "visibleIf": "{contentRights} = 'samerights' and {contentLicence} = 'other'",
+        "description": "Give a URL to the licence, so people can see it on your Open Data Certificate and check that it's publicly available."
+      },
+      {
+        "type": "boolean",
+        "name": "otherContentLicenceOpen",
+        "title": "Is the licence an open licence?",
+        "isRequired": true,
+        "visibleIf": "{contentRights} = 'samerights' and {contentLicence} = 'other'",
+        "description": "If you aren't sure what an open licence is then read the Open Knowledge Definition. Next, choose your licence from the Open Definition Advisory Board open licence list. If a licence isn't in their list, it's either not open or hasn't been assessed yet.",
+        "requirement": {
+          "level": 1,
+          "requireTrue": true,
+          "progressText": "You must publish open data under an open licence so that people can use it."
+        }
+      },
+      {
+        "type": "text",
+        "name": "contentRightsURL",
+        "title": "Where are the rights and licensing of the content explained?",
+        "inputType": "url",
+        "placeholder": "Content Rights Description URL",
+        "isRequired": true,
+        "visibleIf": "{contentRights} = 'mixedrights'",
+        "description": "Give the URL for a page where you describe how someone can find out the rights and licensing of a piece of content from the data."
+      },
+      {
+        "type": "checkbox",
+        "name": "copyrightStatementMetadata",
+        "title": "Does your rights statement include machine-readable versions of",
+        "visibleIf": "{copyrightURL} != ''",
+        "choices": [
+          { "value": "dataLicense", "text": "Data licence" },
+          { "value": "contentLicense", "text": "Content licence" },
+          { "value": "attribution", "text": "Attribution text" },
+          { "value": "attributionURL", "text": "Attribution URL" },
+          { "value": "copyrightNotice", "text": "Copyright notice or statement" },
+          { "value": "copyrightYear", "text": "Copyright year" },
+          { "value": "copyrightHolder", "text": "Copyright holder" },
+          { "value": "databaseRightYear", "text": "Database right year" },
+          { "value": "databaseRightHolder", "text": "Database right holder" }
+        ],
+        "description": "It's good practice to embed information about rights in machine-readable formats so people can automatically attribute this data back to you when they use it."
+      }
+    ]
+}

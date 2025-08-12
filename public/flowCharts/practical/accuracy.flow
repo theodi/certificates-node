@@ -1,0 +1,40 @@
+flowchart TD
+    A[Timeliness: How you keep your data up-to-date] --> B{"What kind of release is this?"}
+
+    B -->|One-off dataset| C["Ensure data accuracy but no future updates planned."]
+    B -->|One-off collection| D["Maintain accuracy of related datasets but no future updates planned."]
+    B -->|Ongoing series| P{"What type of dataset series is this?"}
+    B -->|Ongoing series| V{"How often do you create a new release?"}
+    B -->|Service/API| F{"Does the data behind the API change?"}
+
+    %% Service/API branch
+    F -->|Static data| G["API provides access to unchanging data."]
+    F -->|Changing data| H{"Do you publish dumps of the dataset?"}
+    H -->|Yes| I{"How frequently do you create new database dumps?"}
+    I --> J["Publish database dumps monthly, weekly, or daily for best practices."]
+    H -->|No| K["Consider providing dataset dumps for complete analysis."]
+
+    %% One-off or static data branch
+    C & D & G --> L{"Will your data go out of date?"}
+    L -->|Yes| M["Provide a timestamp to indicate relevance."]
+    L -->|No| N["No updates required for this data."]
+    L -->|Timestamped| O["Ensure timestamps are included for relevance."]
+
+    %% Ongoing series branch
+    P -->|Database dumps| Q{"Is a feed of changes available?"}
+    P -->|Database dumps| I
+    H -->|Yes| Q
+    Q -->|Yes| R["Provide a feed of changes to the dataset."]
+    Q -->|No| S["Consider providing a feed to support updates."]
+    P -->|Aggregates| T["Regularly create and publish updated aggregates of the data."]
+
+    %% Release and publication delays
+    V -->|Daily| W["Ensure minimal delays between creation and publication."]
+    V -->|Weekly| X["Publish new releases weekly for timely updates."]
+    V -->|Monthly| Y["Ensure monthly releases for regular updates."]
+    V -->|Rarely| Z["Consider increasing release frequency to maintain relevance."]
+
+    %% Corrections for time-sensitive data
+   A --> AA{"Will data be corrected if errors are found?"}
+    AA -->|Yes| AB["Ensure corrections are communicated to users."]
+    AA -->|No| AC["Consider correcting errors to maintain data trust."]

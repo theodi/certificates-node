@@ -1,0 +1,37 @@
+flowchart TD
+    A[Support: How you communicate with data users] --> B{"Where can people find contact information for questions about this data?"}
+    B -->|Provided| C["Contact documentation URL is available."]
+    B -->|Not Provided| D["Consider providing a contact URL for data inquiries."]
+
+    A --> E{"Where can people suggest improvements to how your data is published?"}
+    E -->|Provided| F["Improvement suggestions URL is available."]
+    E -->|Not Provided| G["Consider providing a URL to gather suggestions for data improvements."]
+
+    A --> H{"Where can people ask questions about privacy issues related to this data?"}
+    H -->|Provided| I["Privacy contact URL is available."]
+    H -->|Not Provided| J["Consider providing a URL for privacy-related inquiries."]
+
+    A --> K{"Do you use social media to connect with data users?"}
+    K -->|Yes| L{"Which social media accounts can people reach you on?"}
+    L --> M["Social media account URLs provided."]
+    K -->|No| N["Consider using social media to engage with data users."]
+
+    A --> O{"Where can people discuss this dataset?"}
+    O -->|Provided| P["Discussion forum or mailing list URL is available."]
+    O -->|Not Provided| Q["Consider providing a discussion space for data users."]
+
+    %% Error Reporting and Notifications
+    A --> R{"Can people request corrections to your data?"}
+    R -->|Yes| S{"Where can people find instructions for requesting corrections?"}
+    S --> T["Correction request URL provided."]
+    S -->|Not Provided| U["Consider providing a URL for correction requests."]
+    R -->|No| V["Encourage feedback mechanisms for data corrections."]
+    R -->|Yes| W{"Where can people get notifications about corrections?"}
+    W --> X["Correction notification URL provided."]
+    W -->|Not Provided| Y["Consider providing a feed or mailing list for correction updates."]
+
+    %% Community Engagement
+    A --> Z{"Do you have a team actively building a community around this data?"}
+    Z -->|Yes| AA{"Where is the community engagement team's home page?"}
+    AA --> AB["Community engagement team homepage URL provided."]
+    Z -->|No| AC["Consider forming a team to engage with the data user community."]

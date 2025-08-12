@@ -1,0 +1,177 @@
+{
+    "type": "panel",
+    "name": "accuracy",
+    "title": "Accuracy",
+    "description": "How you keep your data up-to-date",
+    "elements": [
+      {
+        "type": "radiogroup",
+        "name": "serviceType",
+        "visibleIf": "{releaseType} = 'service'",
+        "title": "Does the data behind your API change?",
+        "choices": [
+          {
+            "value": "static",
+            "text": "No, the API gives access to unchanging data"
+          },
+          {
+            "value": "changing",
+            "text": "Yes, the API gives access to changing data"
+          }
+        ]
+      },
+      {
+        "type": "radiogroup",
+        "name": "timeSensitive",
+        "visibleIf": "{releaseType} in ['oneoff', 'collection'] || ({releaseType} = 'service' && {serviceType} = 'static')",
+        "title": "Will your data go out of date?",
+        "choices": [
+          {
+            "value": "true",
+            "text": "Yes, this data will go out of date"
+          },
+          {
+            "value": "timestamped",
+            "text": "Yes, this data will go out of date over time but it’s time stamped"
+          },
+          {
+            "value": "false",
+            "text": "No, this data does not contain any time-sensitive information"
+          }
+        ]
+      },
+      {
+        "type": "boolean",
+        "name": "provideDumps",
+        "visibleIf": "{releaseType} = 'service'",
+        "title": "Do you also publish dumps of this dataset?",
+        "description": "A dump is an extract of the whole dataset into a file that people can download. This lets people do analysis that's different to analysis with API access."
+      },
+      {
+        "type": "radiogroup",
+        "name": "dumpFrequency",
+        "visibleIf": "{serviceType} = 'changing' && {provideDumps} = true",
+        "title": "How frequently do you create a new database dump?",
+        "choices": [
+          {
+            "value": "rarely",
+            "text": "Less frequently than once a month"
+          },
+          {
+            "value": "monthly",
+            "text": "At least every month",
+            "description": "You should create a new database dump every month so that people have the latest data."
+          },
+          {
+            "value": "weekly",
+            "text": "Within a week of any change",
+            "description": "You should create a new database dump within a week of any change so that people have less time to wait for the latest data."
+          },
+          {
+            "value": "daily",
+            "text": "Within a day of any change",
+            "description": "You should create a new database dump within a day of any change so that people find it easier to get the latest data."
+          }
+        ],
+        "description": "Faster access to more frequent extracts of the whole dataset means people can get started quicker with the most up-to-date data."
+      },
+      {
+        "type": "boolean",
+        "name": "corrected",
+        "visibleIf": "{releaseType} = 'service' && {timeSensitive} != true",
+        "title": "Will your data be corrected if it has errors?",
+        "description": "It's good practice to fix errors in your data, especially if you use it yourself. When you make corrections, people need to be told about them."
+      },
+      {
+        "type": "boolean",
+        "name": "frequentChanges",
+        "visibleIf": "{releaseType} = 'series'",
+        "title": "Does this data change at least daily?",
+        "description": "Tell people if the underlying data changes on most days. When data changes frequently, it also goes out of date quickly, so people need to know if you also update it frequently and quickly too.",
+        "requirement": {
+              "level": 2,
+              "progressText": "You need to tell people how often the data changes."
+        }
+      },
+      {
+        "type": "radiogroup",
+        "name": "seriesType",
+        "visibleIf": "{frequentChanges} = true",
+        "title": "What type of dataset series is this?",
+        "choices": [
+          {
+            "value": "dumps",
+            "text": "Regular copies of a complete database",
+            "description": "Choose if you publish new and updated copies of your full database regularly. When you create database dumps, it's useful for people to have access to a feed of the changes so they can keep their copies up to date."
+          },
+          {
+            "value": "aggregate",
+            "text": "Regular aggregates of changing data",
+            "description": "Choose if you create new datasets regularly. You might do this if the underlying data can't be released as open data or if you only publish data that's new since the last publication."
+          }
+        ]
+      },
+      {
+        "type": "boolean",
+        "name": "changeFeed",
+        "visibleIf": "{seriesType} = 'dumps'",
+        "title": "Is a feed of changes available?",
+        "description": "Tell people if you provide a stream of changes that affect this data, like new entries or amendments to existing entries. Feeds might be in RSS, Atom, or custom formats."
+      },
+      {
+        "type": "radiogroup",
+        "name": "frequentSeriesPublication",
+        "visibleIf": "{frequentChanges} = true",
+        "title": "How often do you create a new release?",
+        "choices": [
+          {
+            "value": "rarely",
+            "text": "Less than once a month"
+          },
+          {
+            "value": "monthly",
+            "text": "At least every month",
+            "description": "You should create a new dataset release every month so people keep their copies up-to-date and accurate."
+          },
+          {
+            "value": "weekly",
+            "text": "At least every week",
+            "description": "You should create a new dataset release every week so people keep their copies up-to-date and accurate."
+          },
+          {
+            "value": "daily",
+            "text": "At least every day",
+            "description": "You should create a new dataset release every day so people keep their copies up-to-date and accurate."
+          }
+        ]
+      },
+      {
+        "type": "radiogroup",
+        "name": "seriesPublicationDelay",
+        "visibleIf": "{frequentChanges} = true",
+        "title": "How long is the delay between when you create a dataset and when you publish it?",
+        "choices": [
+          {
+            "value": "extreme",
+            "text": "Longer than the gap between releases",
+            "description": "For example, if you create a new version of the dataset every day, choose this if it takes more than a day for it to be published."
+          },
+          {
+            "value": "reasonable",
+            "text": "About the same as the gap between releases",
+            "description": "You should have a reasonable delay between when you create and publish a dataset that is less than the gap between releases so people keep their copies up-to-date and accurate."
+          },
+          {
+            "value": "good",
+            "text": "Less than half the gap between releases",
+            "description": "You should have a short delay between when you create and publish a dataset that is less than half the gap between releases so people keep their copies up-to-date and accurate."
+          },
+          {
+            "value": "minimal",
+            "text": "Minimal or no delay",
+            "description": "You should have minimal or no delay between when you create and publish a dataset so people keep their copies up-to-date and accurate."
+          }
+        ]
+      }
+    ]
+}

@@ -1,0 +1,43 @@
+flowchart TD
+    A[Privacy: How you protect people's privacy] --> B{"Can individuals be identified from this data?"}
+
+    %% Identification Decision
+    B -->|No| C["The data is not about individuals or their activities."]
+    B -->|Yes| D{"Do you have a lawful basis for processing the personal information in this data?"}
+
+    B -->|Yes| BA{"Does your organisation have a Data Protection Officer (DPO)?"}
+
+    %% Data Protection Officer Branch
+    BA -->|Yes| BB{"What is the contact email for the DPO?"}
+    BB --> BC["Ensure DPO contact details are documented and communicated."]
+    BA -->|No| BD["Consider appointing a DPO to ensure compliance with data protection laws."]
+
+    %% Lawful Basis Branch
+    D -->|Yes| E{"What is the lawful basis for processing?"}
+    E --> F["Ensure the lawful basis is documented and communicated."]
+    D -->|Yes| G{"Are you required by law to publish the personal information in this data?"}
+    G -->|Yes| H["Document the legal requirement for publishing this data."]
+    G -->|No| I{"Have you attempted to anonymise the personal information in this data?"}
+
+    %% Anonymisation Branch
+    I -->|Yes| J{"Do you have a lawful basis for carrying out the anonymisation?"}
+    J -->|Yes| K{"Has your anonymisation approach been independently audited?"}
+    K -->|Yes| L["The anonymisation process has been verified by independent audit."]
+    K -->|No| M["Consider auditing your anonymisation approach to ensure compliance."]
+    J -->|No| N["You must have a lawful basis for processing, including anonymisation."]
+    %% Privacy Notice
+    J -->|No| JA{"Where is the privacy notice for affected individuals?"}
+    JA -->|Provided| JB["Privacy notice made available to affected individuals."]
+    JA -->|Not Provided| JC["Provide a privacy notice to comply with data protection laws."]
+
+    I -->|No| O["You must attempt to anonymise personal information unless legally required to publish."]
+
+    %% Privacy Impact Assessment Branch
+    D -->|Yes| P{"Have you carried out a Privacy Impact Assessment (PIA)?"}
+    P -->|Yes| Q{"Where is your Privacy Impact Assessment published?"}
+    Q --> R{"Has the Privacy Impact Assessment been independently audited?"}
+    R -->|Yes| S["The assessment has been independently verified."]
+    R -->|No| T["Consider auditing the Privacy Impact Assessment for better assurance."]
+    Q -->|Not Published| U["Consider publishing the Privacy Impact Assessment."]
+
+    P -->|No| V["Conduct a Privacy Impact Assessment before publishing personal data."]

@@ -1,0 +1,8 @@
+flowchart TD
+    A[Provenance: How people can verify and trace your data] --> B{"Do you provide machine-readable provenance for your data?"}
+    B -->|Yes| C["Provenance trail is machine-readable, allowing traceability of data origins."]
+    B -->|No| D["Consider providing a machine-readable provenance trail to build trust."]
+
+    A --> E{"Where do you describe how people can verify that data they receive comes from you?"}
+    E -->|Provided| F["Verification process URL is available, ensuring data integrity."]
+    E -->|Not Provided| G["Consider describing a verification process to ensure data authenticity."]

@@ -1,0 +1,19 @@
+flowchart TD
+    A[Guarantees: How much people can depend on your data’s availability] --> B{"Do you take offsite backups?"}
+    B -->|Yes| C["Ensure the data is backed up offsite to prevent loss."]
+    B -->|No| D["Consider implementing offsite backups to safeguard data."]
+
+    %% Conditional branch for Service/API
+    A --> E{Is the release type Service/API?}
+    E -->|Yes| F{"Where do you describe guarantees about service availability?"}
+    F --> G["Provide a URL describing service guarantees (e.g., uptime)."]
+    E -->|Yes| H{"Where do you provide information about the current service status?"}
+    H --> I["Provide a URL for a service status page showing current issues."]
+    E -->|No| J["Service-specific questions skipped."]
+
+    %% Data availability
+    A --> K{"How long will this data be available for?"}
+    K -->|Might disappear anytime| L["Consider guaranteeing data availability to increase reliability."]
+    K -->|Available for a year| M["Ensure data availability for at least a year to build trust."]
+    K -->|Available for a couple of years| N["Guarantee medium-term availability to meet user expectations."]
+    K -->|Available long-term| O["Guarantee long-term availability to maximise trust."]
