@@ -364,3 +364,28 @@ li {
 strong {
   color: inherit;
 }
+input[type="text"], input[type="email"], input[type="password"], input[type="url"], select {
+  background: #f0f3f4;
+    border: 2px solid #f0f3f4;
+    font-size: 16px;
+    font-size: Max(16px, 1em);
+    font-weight: 700;
+    letter-spacing: 0;
+    padding: .5rem;
+    transition: box-shadow .18s ease-in-out;
+    --tw-text-opacity: 1;
+    color: var(--color-dark-blue);
+    min-width: 400px
+}
+/* Custom dark-blue dropdown arrow for selects */
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 10 6'%3E%3Cpath fill='%23072589' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right .75rem center;
+  background-size: 12px 8px;
+  padding-right: 2rem; /* space for the arrow */
+}
+select::-ms-expand { display: none; }

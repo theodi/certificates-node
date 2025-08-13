@@ -1,40 +1,30 @@
 import express from 'express';
 import Survey from '../models/Survey.js';
+import { listSurveysPage, listSurveysData, surveyCriteriaPage } from '../controllers/surveys.js';
+import { getSurveyJson } from '../controllers/responseApi.js';
 
 const router = express.Router();
 
-// GET /data/survey - return the latest non-alpha survey
-router.get('/survey', async (req, res) => {
-  try {
-    const survey = await Survey.findOne({ status: { $ne: 'alpha' } })
-      .sort({ version: -1, createdAt: -1 })
-      .lean();
+// List surveys (HTML or JSON)
+router.get('/', (req, res, next) =>
+  res.format({
+    html: () => listSurveysPage(req, res, next),
+    json: () => listSurveysData(req, res, next)
+  })
+);
 
-    if (!survey) {
-      return res.status(404).json({ error: 'No survey found' });
-    }
+// Survey criteria page
+router.get('/:surveyId/criteria', surveyCriteriaPage);
 
-    const pages = (survey.sections || []).map((section) => ({
-      name: section.name,
-      title: section.title,
-      description: section.description,
-      elements: section.elements || []
-    }));
+// Single survey: HTML (criteria) or JSON (schema)
+router.get('/:surveyId', (req, res, next) =>
+  res.format({
+    html: () => surveyCriteriaPage(req, res, next),
+    json: () => getSurveyJson(req, res, next)
+  })
+);
 
-    res.json({
-      localle: survey.localle,
-      localleText: survey.localleText,
-      title: survey.title,
-      fullTitle: survey.fullTitle,
-      description: survey.description,
-      requirementLevels: survey.requirementLevels,
-      pages
-    });
-  } catch (error) {
-    console.error('Error loading survey from DB:', error.message);
-    res.status(500).json({ error: 'Failed to load survey from database' });
-  }
-});
+
 
 export default router;
 

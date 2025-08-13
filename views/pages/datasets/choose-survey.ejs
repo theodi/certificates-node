@@ -1,0 +1,84 @@
+<%- include('../../partials/header') %>
+<section class="content-block white">
+  <h1>Select Certificate Template</h1>
+  <p>Dataset: <strong><%= dataset.title %></strong> — <a href="<%= dataset.url %>" target="_blank" rel="noopener">Open dataset</a></p>
+  <form id="chooseForm" method="post" action="/datasets/<%= dataset._id %>/certificates/new">
+    <div>
+      <label for="surveyTitle">Select your certificate</label>
+      <select id="surveyTitle" required>
+        <% groups.forEach(group => { %>
+          <optgroup label="<%= group.title %>">
+            <% group.items.forEach(item => { %>
+              <option value="<%= item._id %>"><%= item.fullTitle || item.title %> — <%= (item.localleText || item.localle || '').toUpperCase() %></option>
+            <% }) %>
+          </optgroup>
+        <% }) %>
+      </select>
+    </div>
+    <div>
+      <label for="surveyVariant">Select the version</label>
+      <select id="surveyVariant" name="surveyId" required></select>
+    </div>
+    <div>
+      <label for="copyFrom">Copy answers from existing certificate (optional)</label>
+      <select id="copyFrom" name="copyFrom">
+        <option value="">— None —</option>
+      </select>
+    </div>
+    <!--<div>
+      <label for="locale">Locale</label>
+      <input type="text" id="locale" name="locale" value="en" />
+    </div>-->
+    <br/>
+    <button type="submit">Start</button>
+  </form>
+  <script>
+    // Populate copyFrom with existing certificates for this dataset
+    (async function(){
+      try {
+        const [certRes, surveysRes] = await Promise.all([
+          fetch('/datasets/<%= dataset._id %>', { headers: { 'Accept': 'application/json' }}),
+          fetch('/surveys', { headers: { 'Accept': 'application/json' }})
+        ]);
+        const surveysPayload = await surveysRes.json();
+        const titles = surveysPayload.titles || {};
+        const titleList = surveysPayload.titleOrder || Object.keys(titles);
+        // Rebuild top-level survey title dropdown
+        const surveySelect = document.getElementById('surveyTitle');
+        const localeSelect = document.getElementById('surveyVariant');
+        surveySelect.innerHTML = '';
+        titleList.forEach(title => {
+          const opt = document.createElement('option');
+          opt.value = title;
+          opt.textContent = title;
+          surveySelect.appendChild(opt);
+        });
+        function rebuildVariantsFor(title){
+          const arr = titles[title] || [];
+          localeSelect.innerHTML = '';
+          arr.forEach(item => {
+            const opt = document.createElement('option');
+            opt.value = item.id;
+            opt.textContent = `${(item.localleText || item.localle || '').toUpperCase()} — v${item.version}`;
+            localeSelect.appendChild(opt);
+          });
+        }
+        surveySelect.addEventListener('change', function(){ rebuildVariantsFor(this.value); });
+        if (titleList.length) rebuildVariantsFor(titleList[0]);
+
+        const certsPayload = await certRes.json();
+        const list = (certsPayload && certsPayload.data) ? certsPayload.data : [];
+        const select = document.getElementById('copyFrom');
+        list.forEach(row => {
+          const opt = document.createElement('option');
+          opt.value = row.id;
+          opt.textContent = `${row.stateLabel} — ${row.levelLabel} — ${new Date(row.updatedAt).toLocaleString()}`;
+          select.appendChild(opt);
+        });
+      } catch(e) {}
+    })();
+  </script>
+</section>
+<%- include('../../partials/footer') %>
+
+

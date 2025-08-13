@@ -19,6 +19,11 @@ const datasetSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  managerUserIds: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    index: true
+  }],
   removed: {
     type: Boolean,
     default: false
@@ -38,6 +43,7 @@ const datasetSchema = new mongoose.Schema({
 // Indexes
 datasetSchema.index({ legacyId: 1 }, { unique: true, sparse: true });
 datasetSchema.index({ userId: 1, createdAt: -1 });
+datasetSchema.index({ managerUserIds: 1 });
 datasetSchema.index({ url: 1 });
 datasetSchema.index({ removed: 1 });
 

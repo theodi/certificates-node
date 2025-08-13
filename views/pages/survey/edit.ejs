@@ -1,5 +1,5 @@
-<%- include('../partials/header') %>
-<%- include('./survey-header') %>
+<%- include('../../partials/header') %>
+<%- include('../../partials/survey-header') %>
 
 <section class="light-grey new-project padded">
     <style>
@@ -45,32 +45,59 @@
         const certificationProgress = {
             levels: {}, // Dynamically populated based on the levels in the schema
         };
-        Survey.surveyLocalization.supportedLocales = ["en", "es"];
+        // Default to English; will override if survey provides supported languages
+        try { Survey.surveyLocalization.supportedLocales = ["en"]; } catch(e) {}
         let selectedLanguage = "en"; // Default to English
 
         document.addEventListener("DOMContentLoaded", function () {
-            // Fetch the client schema and update the "authority" enum with authority names and ids
-            fetch('/data/survey')
-                .then(response => response.json())
-                .then(schema => {
+            const responseSetId = '<%= responseSetId %>';
+            const surveyId = '<%= surveyId %>';
+            // Load specific survey definition
+            Promise.all([
+                fetch(`/surveys/${surveyId}`, { headers: { 'Accept': 'application/json' }}).then(r => r.json()),
+                fetch(`/datasets/${encodeURIComponent('<%= datasetId %>')}/certificates/${responseSetId}`, { headers: { 'Accept': 'application/json' }}).then(r => r.json())
+            ]).then(([schema, rs]) => {
                     survey = new Survey.Model(schema);
                     // Allow HTML in titles/descriptions when supported by SurveyJS
                     try { survey.allowHtml = true; } catch(e) {}
-                    // Set initial language from the dropdown
-                    survey.locale = languageSelector.value;
+                    // Language selector handling (hide/disable unless survey declares supportedLanguages)
+                    const langSelect = document.getElementById('languageSelector');
+                    const supported = Array.isArray(schema.supportedLanguages) ? schema.supportedLanguages : null;
+                    if (supported && supported.length) {
+                        try { Survey.surveyLocalization.supportedLocales = supported; } catch(e) {}
+                        if (langSelect) {
+                            // Rebuild options based on supported list
+                            langSelect.innerHTML = '';
+                            supported.forEach(code => {
+                                const opt = document.createElement('option');
+                                opt.value = code;
+                                opt.textContent = (code || '').toString().toUpperCase();
+                                langSelect.appendChild(opt);
+                            });
+                            langSelect.disabled = false;
+                            langSelect.style.display = '';
+                        }
+                        survey.locale = (langSelect && langSelect.value) ? langSelect.value : supported[0];
+                        selectedLanguage = survey.locale;
+                    } else {
+                        // No supportedLanguages → hide the selector and force English
+                        if (langSelect) { langSelect.disabled = true; langSelect.style.display = 'none'; }
+                        survey.locale = 'en';
+                        selectedLanguage = 'en';
+                    }
 
                     // Update language dynamically when the dropdown changes
-                    languageSelector.addEventListener("change", function () {
-                        survey.locale = languageSelector.value;
-                        selectedLanguage = languageSelector.value; // Default to English
-                        const visibleQuestions = survey.getAllQuestions().filter((q) => q.isVisible);
-
-                        // Filter schemaQuestions to match only visible questions by name
-                        const visibleSchemaQuestions = schemaQuestions.filter((schemaQuestion) =>
-                            visibleQuestions.some((surveyQuestion) => surveyQuestion.name === schemaQuestion.name)
-                        );
-                        calculateProgress(visibleSchemaQuestions, survey.data);
-                    });
+                    if (langSelect && !langSelect.disabled) {
+                        langSelect.addEventListener("change", function () {
+                            survey.locale = langSelect.value;
+                            selectedLanguage = langSelect.value;
+                            const visibleQuestions = survey.getAllQuestions().filter((q) => q.isVisible);
+                            const visibleSchemaQuestions = schemaQuestions.filter((schemaQuestion) =>
+                                visibleQuestions.some((surveyQuestion) => surveyQuestion.name === schemaQuestion.name)
+                            );
+                            calculateProgress(visibleSchemaQuestions, survey.data);
+                        });
+                    }
 
                     // Disable progress bar and question numbering for custom navigation
                     survey.showProgressBar = "off";
@@ -87,8 +114,17 @@
                         visibleQuestions.some((surveyQuestion) => surveyQuestion.name === schemaQuestion.name)
                     );
 
+                    // Prefill from existing responses
+                    const initialData = {};
+                    try {
+                      if (rs && rs.responses) {
+                        for (const [k, v] of Object.entries(rs.responses)) {
+                          if (v && typeof v === 'object' && 'value' in v) initialData[k] = v.value;
+                        }
+                      }
+                    } catch(_) {}
                     // Calculate progress based on visible schema questions
-                    calculateProgress(visibleSchemaQuestions, {});
+                    calculateProgress(visibleSchemaQuestions, initialData);
 
                     // Generate a sidebar for navigation
                     const sidebar = document.getElementById("sidebar");
@@ -102,6 +138,41 @@
                         };
                         sidebar.appendChild(pageLink);
                     });
+                    const saveQueue = new Map();
+                    let saveTimer = null;
+                    function scheduleSave(name, value) {
+                      saveQueue.set(name, { value });
+                      if (saveTimer) clearTimeout(saveTimer);
+                      saveTimer = setTimeout(async () => {
+                        const payload = { responses: Object.fromEntries(saveQueue.entries()) };
+                        saveQueue.clear();
+                      try {
+                          const resp = await fetch(`/datasets/${encodeURIComponent('<%= datasetId %>')}/certificates/${responseSetId}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                            body: JSON.stringify(payload)
+                          });
+                          try {
+                            const data = await resp.json();
+                            if (data && data.progress) {
+                              const progressContainer = document.getElementById("certificationProgressDetail");
+                              if (progressContainer && data.progress.levels) {
+                                // Instead of hand-rendering, re-use local renderer that includes <details>
+                                try {
+                                  const visibleQuestionsNow = survey.getAllQuestions().filter((q) => q.isVisible);
+                                  const visibleSchemaQuestionsNow = schemaQuestions.filter((schemaQuestion) =>
+                                    visibleQuestionsNow.some((surveyQuestion) => surveyQuestion.name === schemaQuestion.name)
+                                  );
+                                  calculateProgress(visibleSchemaQuestionsNow, survey.data);
+                                } catch(_) {}
+                              }
+                            }
+                          } catch(_) {}
+                        } catch (e) {
+                          console.error('Autosave failed', e);
+                        }
+                      }, 400);
+                    }
                     survey.onValueChanged.add((sender, options) => {
                         // Get all currently visible questions from the survey
                         const visibleQuestions = survey.getAllQuestions().filter((q) => q.isVisible);
@@ -113,11 +184,22 @@
 
                         // Calculate progress based on visible schema questions
                         calculateProgress(visibleSchemaQuestions, sender.data);
-                        console.log(JSON.stringify(sender.data, null, 3))
+                        // Tick UI immediately when a text field becomes non-empty
+                        try {
+                          if (options && options.name) {
+                            const q = visibleQuestions.find(q => q.name === options.name);
+                            const req = q && (q.requirement || null);
+                            if (q && (q.getType?.() === 'text' || q.getType?.() === 'comment') && req && req.level) {
+                              const val = options.value;
+                              if (val != null && String(val).trim().length > 0) {
+                                // Already handled by calculateProgress; no-op here
+                              }
+                            }
+                          }
+                        } catch(_) {}
+                        if (options && options.name) scheduleSave(options.name, options.value);
                     });
-                    survey.onComplete.add((sender, options) => {
-                        console.log(JSON.stringify(sender.data, null, 3));
-                    });
+                    survey.onComplete.add((sender, options) => {});
 
                     // Helper: get localized string from either plain string or { default, <lang> }
                     function localized(textOrObj) {
@@ -178,12 +260,13 @@
                         const host = options.htmlElement;
                         if (!host) return;
                         const descEl = host.querySelector('.sd-question__description, .sd-description, [data-testid="question-description"]');
-                        const titleEl = host.querySelector('.sd-question__title, .sd-title, [data-testid="question-title"]');
+                        const titleEl = host.querySelector('.sd-question__title .sv-string-viewer');
                         const descriptionHtml = localized(q.description);
                         const titleHtml = localized(q.locTitle && q.locTitle.text ? q.locTitle.text : q.title);
                         if (descEl && descriptionHtml && window.DOMPurify) {
                             descEl.innerHTML = DOMPurify.sanitize(descriptionHtml);
                         }
+                        
                         if (titleEl && titleHtml && window.DOMPurify) {
                             // Only override if it contains HTML tags
                             if (/[<>]/.test(titleHtml)) {
@@ -191,12 +274,25 @@
                             }
                         }
                     });
+                    // Apply initial data
+                    survey.data = initialData;
                     $("#surveyElement").Survey({ model: survey });
 
                     // Fallback in case onAfterRenderSurvey is unavailable
                     if (!(survey.onAfterRenderSurvey && survey.onAfterRenderSurvey.add)) {
                         setTimeout(() => applySurveyHeaderHtml(document.getElementById('surveyElement')), 0);
                     }
+
+                    // After initial render, recompute progress once visibility is fully applied
+                    setTimeout(() => {
+                      try {
+                        const visibleQuestionsNow = survey.getAllQuestions().filter((q) => q.isVisible);
+                        const visibleSchemaQuestionsNow = schemaQuestions.filter((schemaQuestion) =>
+                          visibleQuestionsNow.some((surveyQuestion) => surveyQuestion.name === schemaQuestion.name)
+                        );
+                        calculateProgress(visibleSchemaQuestionsNow, survey.data);
+                      } catch(_) {}
+                    }, 0);
                 });
         });
 
@@ -229,12 +325,17 @@
             return questions;
         }
         function initializeProgress(schemaQuestions) {
-            const maxLevel = Math.max(
-                ...schemaQuestions
-                    .flatMap((q) => q.choices?.map((c) => c.requirement?.level) || [q.requirement?.level])
-                    .filter((level) => level !== undefined)
-            );
-
+            const levels = [];
+            schemaQuestions.forEach((q) => {
+                if (Array.isArray(q.choices)) {
+                    q.choices.forEach((c) => { if (c?.requirement?.level !== undefined) levels.push(c.requirement.level); });
+                }
+                if (q?.requirement?.level !== undefined) levels.push(q.requirement.level);
+                if (Array.isArray(q.requirements)) {
+                    q.requirements.forEach(r => { if (r?.level !== undefined) levels.push(r.level); });
+                }
+            });
+            const maxLevel = levels.length ? Math.max(...levels) : 4;
             for (let i = 1; i <= maxLevel; i++) {
                 certificationProgress.levels[i] = { progress: 0, unmet: [] };
             }
@@ -256,45 +357,92 @@
             return progressText[selectedLanguage] || progressText.default;
         };
 
-        if (question.choices) {
-            // Handle choice-based questions
-            if (answer) {
-                const selectedChoice = question.choices.find((choice) => choice.value === answer);
-                if (selectedChoice?.requirement?.level) {
-                    const level = selectedChoice.requirement.level;
-
-                    // Increment progress for this and all lower levels
-                    for (let i = 1; i <= level; i++) {
-                        certificationProgress.levels[i].progress++;
+        if (Array.isArray(question.choices)) {
+            const selected = Array.isArray(answer) ? answer : (answer != null ? [answer] : []);
+            // Element-level requirements array
+            if (Array.isArray(question.requirements) && question.requirements.length) {
+                question.requirements.forEach((req) => {
+                    const level = req.level;
+                    let met = false;
+                    if (question.type === 'boolean') {
+                        met = req.requireTrue === false ? (answer !== undefined && answer !== null) : (answer === true);
+                    } else {
+                        met = (selected.length > 0 || (answer != null && String(answer).trim().length > 0));
                     }
-                } else if (question.requirement) {
-                    certificationProgress.levels[question.requirement.level].progress++;
-                }
-            } else {
-                let flag = false;
-                // Add unmet requirements for unanswered choice-based questions
-                question.choices.forEach((choice) => {
-                    if (choice.requirement?.level) {
-                        flag = true;
-                        const level = choice.requirement.level;
-                        certificationProgress.levels[level].unmet.push({
-                            text: getProgressText(choice.requirement.progressText),
-                            questionName: question.name
-                        });
+                    if (met) {
+                        for (let i = 1; i <= level; i++) certificationProgress.levels[i].progress++;
+                    } else {
+                        certificationProgress.levels[level].unmet.push({ text: getProgressText(req.progressText), questionName: question.name });
                     }
                 });
-                if (!flag && question.requirement) {
-                    const level = question.requirement.level;
-                    certificationProgress.levels[level].unmet.push({
-                        text: getProgressText(question.requirement.progressText),
-                        questionName: question.name
-                    });
+            } else if (question.requirement) {
+                const level = question.requirement.level;
+                const met = (selected.length > 0);
+                if (met) {
+                    for (let i = 1; i <= level; i++) certificationProgress.levels[i].progress++;
+                } else {
+                    certificationProgress.levels[level].unmet.push({ text: getProgressText(question.requirement.progressText), questionName: question.name });
                 }
+            }
+
+            // Choice-level requirements
+            const isSingle = (question.type === 'radiogroup');
+            if (isSingle) {
+                // For single-choice, only the selected choice counts; non-selected should NOT be unmet
+                const selectedValue = selected[0];
+                const selectedChoice = question.choices.find(c => c && c.value === selectedValue);
+                if (selectedChoice && selectedChoice.requirement && selectedChoice.requirement.level) {
+                    const level = selectedChoice.requirement.level;
+                    for (let i = 1; i <= level; i++) certificationProgress.levels[i].progress++;
+                }
+                // If some choices have requirements but the selected choice does NOT, then the highest
+                // achievable level for this question is one less than the minimum level of the other choices.
+                const choiceLevels = question.choices
+                  .filter(c => c && c.requirement && typeof c.requirement.level !== 'undefined')
+                  .map(c => c.requirement.level);
+                if (choiceLevels.length) {
+                  const selectedHasReq = !!(selectedChoice && selectedChoice.requirement && typeof selectedChoice.requirement.level !== 'undefined');
+                  if (!selectedHasReq) {
+                    const minLevel = Math.min(...choiceLevels);
+                    // Find any choice at minLevel to get its requirement text
+                    const minChoice = question.choices.find(c => c && c.requirement && c.requirement.level === minLevel);
+                    const reqText = minChoice && minChoice.requirement && minChoice.requirement.progressText
+                      ? getProgressText(minChoice.requirement.progressText)
+                      : 'Requirement not met for this level';
+                    if (certificationProgress.levels[minLevel]) {
+                      certificationProgress.levels[minLevel].unmet.push({
+                        text: reqText,
+                        questionName: question.name
+                      });
+                    }
+                  }
+                }
+            } else {
+                // For multi-select, each selected choice contributes positively; ignore non-selected
+                question.choices.forEach((choice) => {
+                    if (!choice?.requirement?.level) return;
+                    const level = choice.requirement.level;
+                    const isSelected = selected.includes(choice.value);
+                    if (isSelected) {
+                        for (let i = 1; i <= level; i++) certificationProgress.levels[i].progress++;
+                    }
+                });
             }
         } else if (question.type === "boolean" || question.type === "text") {
             if (requirement?.level) {
                 const level = requirement.level;
-                const isMet = requirement.requireTrue === false ? answer !== undefined : answer === true;
+                let isMet = false;
+                if (question.type === 'boolean') {
+                    // For boolean, default requireTrue=true unless explicitly false
+                    if (requirement.requireTrue === false) {
+                        isMet = (answer !== undefined && answer !== null);
+                    } else {
+                        isMet = (answer === true);
+                    }
+                } else {
+                    // For text-like answers, consider non-empty value as met
+                    isMet = (answer !== null && answer !== undefined && String(answer).trim().length > 0);
+                }
 
                 if (isMet) {
                     for (let i = 1; i <= level; i++) {
@@ -306,6 +454,21 @@
                         questionName: question.name
                     });
                 }
+            } else if (Array.isArray(question.requirements) && question.requirements.length) {
+                question.requirements.forEach((req) => {
+                    const level = req.level;
+                    let met = false;
+                    if (question.type === 'boolean') {
+                        met = req.requireTrue === false ? (answer !== undefined && answer !== null) : (answer === true);
+                    } else {
+                        met = (answer !== null && answer !== undefined && String(answer).trim().length > 0);
+                    }
+                    if (met) {
+                        for (let i = 1; i <= level; i++) certificationProgress.levels[i].progress++;
+                    } else {
+                        certificationProgress.levels[level].unmet.push({ text: getProgressText(req.progressText), questionName: question.name });
+                    }
+                });
             }
         }
     });
@@ -318,19 +481,27 @@ function updateProgressUI() {
     const progressContainer = document.getElementById("certificationProgressDetail");
     progressContainer.innerHTML = ""; // Clear previous progress
 
-    Object.keys(certificationProgress.levels).forEach((level) => {
+    Object.keys(certificationProgress.levels).filter((lvl) => Number(lvl) > 0).forEach((level) => {
         const { progress, unmet } = certificationProgress.levels[level];
 
-        const totalRequirements = progress + unmet.length;
+        // Deduplicate unmet by questionName+text to avoid duplicates when multiple answers map to same level
+        const uniqueUnmet = [];
+        const seen = new Set();
+        (unmet || []).forEach((req) => {
+            const key = `${req.questionName}::${req.text}`;
+            if (!seen.has(key)) { seen.add(key); uniqueUnmet.push(req); }
+        });
+
+        const totalRequirements = progress + uniqueUnmet.length;
         const progressPercentage = totalRequirements > 0 ? (progress / totalRequirements) * 100 : 0;
 
-        const unmetDropdown = unmet.length
+        const unmetDropdown = uniqueUnmet.length
             ? `
             <details>
-                <summary>${unmet.length} unmet requirements</summary>
+                <summary>${uniqueUnmet.length} unmet requirements</summary>
                 <div class="dropdown-content">
                     <ul>
-                        ${unmet
+                        ${uniqueUnmet
                             .map(
                                 (req) =>
                                     `<li><a href="#" class="navigate-to-question" data-question-name="${req.questionName}">${req.text}</a></li>`
@@ -384,4 +555,4 @@ function navigateToQuestion(questionName) {
 
     </script>
 </section>
-<%- include('../partials/footer') %>
+<%- include('../../partials/footer') %>

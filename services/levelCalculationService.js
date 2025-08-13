@@ -1,344 +1,374 @@
-const fs = require('fs').promises;
-const path = require('path');
+import Survey from '../models/Survey.js';
 
 class LevelCalculationService {
-  // Cache for survey definitions
   static surveyCache = new Map();
+  static DEBUG = (process && process.env && process.env.DEBUG_LEVEL_CALC === 'true');
 
-  /**
-   * Calculate the achievement level for a response set
-   * @param {ResponseSet} responseSet - The response set to evaluate
-   * @returns {number} - Level index (0-4)
-   */
-  static async calculateLevel(responseSet) {
+  static async calculateLevel(responseSet, surveyDoc = null) {
     try {
-      const survey = await this.loadSurveyDefinition(responseSet.localle || responseSet.accessCode);
-      const requirements = this.extractRequirements(survey);
-      
-      // Check each level from highest to lowest
-      for (let level = 4; level >= 0; level--) {
+      const survey = surveyDoc || await this.loadSurveyById(responseSet.surveyId);
+      const { levelNames, maxLevel } = this.getSurveyLevelMeta(survey);
+      const requirements = this.extractRequirementsFromSections(survey, levelNames);
+      if (this.DEBUG) {
+        console.debug('[LevelCalc] calculateLevel: surveyId=%s reqCount=%d maxLevel=%d', String(responseSet.surveyId), requirements.length, maxLevel);
+      }
+      for (let level = maxLevel; level >= 1; level -= 1) {
+        console.debug('[LevelCalc] level %d: meetsLevelRequirements=%s', level, await this.meetsLevelRequirements(responseSet, requirements, level));
         if (await this.meetsLevelRequirements(responseSet, requirements, level)) {
+          if (this.DEBUG) console.debug('[LevelCalc] achieved level %d', level);
           return level;
         }
       }
-      
-      return 0; // none
+      return 0;
     } catch (error) {
       console.error('Error calculating level:', error);
       return 0;
     }
   }
 
-  /**
-   * Calculate progress information for a response set
-   * @param {ResponseSet} responseSet - The response set to evaluate
-   * @returns {Object} - Progress information
-   */
-  static async calculateProgress(responseSet) {
+  static async calculateProgress(responseSet, surveyDoc = null) {
     try {
-      const survey = await this.loadSurveyDefinition(responseSet.localle || responseSet.accessCode);
-      const requirements = this.extractRequirements(survey);
-      
+      const survey = surveyDoc || await this.loadSurveyById(responseSet.surveyId);
+      const { levelNames, maxLevel } = this.getSurveyLevelMeta(survey);
+      const requirements = this.extractRequirementsFromSections(survey, levelNames);
+      if (this.DEBUG) console.debug('[LevelCalc] calculateProgress: reqCount=%d maxLevel=%d', requirements.length, maxLevel);
       const progress = {
-        currentLevel: responseSet.attainedLevel,
-        currentLevelName: responseSet.getLevelName(),
+        currentLevel: Number(responseSet.attainedLevel || 0),
+        currentLevelName: levelNames[Number(responseSet.attainedLevel || 0)] || (levelNames[0] || 'none'),
         totalQuestions: 0,
         answeredQuestions: 0,
         requiredQuestions: 0,
         answeredRequiredQuestions: 0,
         levels: []
       };
-
-      // Calculate progress for each level
-      for (let level = 0; level <= 4; level++) {
-        const levelRequirements = requirements.filter(req => req.level === level);
+      // Cumulative progress: for each level L, consider all requirements with level <= L
+      for (let level = 1; level <= maxLevel; level += 1) {
+        const levelRequirements = requirements.filter(req => req.level <= level);
         const levelProgress = await this.calculateLevelProgress(responseSet, levelRequirements);
-        
         progress.levels.push({
           level,
-          levelName: ['none', 'basic', 'pilot', 'standard', 'exemplar'][level],
+          levelName: levelNames[level] || String(level),
           total: levelProgress.total,
           answered: levelProgress.answered,
           required: levelProgress.required,
           answeredRequired: levelProgress.answeredRequired,
-          percentage: levelProgress.total > 0 ? (levelProgress.answered / levelProgress.total * 100).toFixed(1) : 0
+          percentage: (levelProgress.required > 0)
+            ? (levelProgress.answeredRequired / levelProgress.required * 100).toFixed(1)
+            : (levelProgress.total > 0 ? (levelProgress.answered / levelProgress.total * 100).toFixed(1) : 0)
         });
-
         progress.totalQuestions += levelProgress.total;
         progress.answeredQuestions += levelProgress.answered;
         progress.requiredQuestions += levelProgress.required;
         progress.answeredRequiredQuestions += levelProgress.answeredRequired;
       }
-
-      progress.overallPercentage = progress.totalQuestions > 0 
-        ? (progress.answeredQuestions / progress.totalQuestions * 100).toFixed(1) 
-        : 0;
-
+      progress.overallPercentage = progress.totalQuestions > 0 ? (progress.answeredQuestions / progress.totalQuestions * 100).toFixed(1) : 0;
+      if (this.DEBUG) {
+        console.debug('[LevelCalc] progress summary: total=%d answered=%d required=%d answeredRequired=%d overall=%s%%',
+          progress.totalQuestions, progress.answeredQuestions, progress.requiredQuestions, progress.answeredRequiredQuestions, String(progress.overallPercentage));
+        for (const lvl of progress.levels) {
+          console.debug('[LevelCalc] level %d: total=%d answered=%d required=%d answeredRequired=%d pct=%s%%',
+            lvl.level, lvl.total, lvl.answered, lvl.required, lvl.answeredRequired, String(lvl.percentage));
+        }
+      }
       return progress;
     } catch (error) {
       console.error('Error calculating progress:', error);
-      return {
-        currentLevel: 0,
-        currentLevelName: 'none',
-        totalQuestions: 0,
-        answeredQuestions: 0,
-        requiredQuestions: 0,
-        answeredRequiredQuestions: 0,
-        overallPercentage: 0,
-        levels: []
-      };
+      return { currentLevel: 0, currentLevelName: 'none', totalQuestions: 0, answeredQuestions: 0, requiredQuestions: 0, answeredRequiredQuestions: 0, overallPercentage: 0, levels: [] };
     }
   }
 
-  /**
-   * Check if response set meets requirements for a specific level
-   * @param {ResponseSet} responseSet - The response set to evaluate
-   * @param {Array} requirements - All requirements
-   * @param {number} level - Level to check (0-4)
-   * @returns {boolean} - Whether the level is achieved
-   */
-  static async meetsLevelRequirements(responseSet, requirements, level) {
-    const levelRequirements = requirements.filter(req => req.level === level);
-    
-    for (const requirement of levelRequirements) {
-      if (!await this.meetsRequirement(responseSet, requirement)) {
-        return false;
-      }
-    }
-    
-    return true;
+  static async loadSurveyById(surveyId) {
+    if (!surveyId) throw new Error('Missing surveyId');
+    const cacheKey = String(surveyId);
+    if (this.surveyCache.has(cacheKey)) return this.surveyCache.get(cacheKey);
+    const survey = await Survey.findById(surveyId).lean();
+    if (!survey) throw new Error('Survey not found');
+    this.surveyCache.set(cacheKey, survey);
+    return survey;
   }
 
-  /**
-   * Check if a specific requirement is met
-   * @param {ResponseSet} responseSet - The response set to evaluate
-   * @param {Object} requirement - The requirement to check
-   * @returns {boolean} - Whether the requirement is met
-   */
-  static async meetsRequirement(responseSet, requirement) {
-    const { questionId, expectedValue, condition } = requirement;
-    
-    if (!responseSet.hasResponse(questionId)) {
-      return false;
-    }
+  static extractRequirementsFromSections(survey, levelNames) {
+    const requirements = [];
+    const sections = Array.isArray(survey?.sections) ? survey.sections : [];
+    let elementCount = 0;
+    for (const section of sections) {
+      const elements = Array.isArray(section?.elements) ? section.elements : [];
+      for (const el of elements) {
+        if (!el || !el.name) continue;
+        elementCount += 1;
+        // Precompute choice requirement metadata for this question
+        let minChoiceLevel = null;
+        let choiceRequiredValues = [];
+        if (Array.isArray(el.choices)) {
+          const lvls = [];
+          for (const ch of el.choices) {
+            if (ch && ch.requirement && typeof ch.requirement.level !== 'undefined') {
+              lvls.push(this.parseRequirementLevel(ch.requirement.level, levelNames));
+              choiceRequiredValues.push(ch.value);
+            }
+          }
+          if (lvls.length) minChoiceLevel = Math.min(...lvls);
+        }
 
-    const response = responseSet.getResponse(questionId);
-    const value = responseSet.getResponseValue(questionId);
-
-    // Check if question is visible (conditional logic)
-    if (condition && !this.evaluateCondition(responseSet, condition)) {
-      return true; // Requirement not applicable
-    }
-
-    // Check expected value
-    if (expectedValue !== undefined) {
-      return value === expectedValue;
-    }
-
-    // Check if response has a value
-    return value !== null && value !== undefined && value !== '';
-  }
-
-  /**
-   * Calculate progress for a specific level
-   * @param {ResponseSet} responseSet - The response set to evaluate
-   * @param {Array} levelRequirements - Requirements for the level
-   * @returns {Object} - Progress information for the level
-   */
-  static async calculateLevelProgress(responseSet, levelRequirements) {
-    let total = 0;
-    let answered = 0;
-    let required = 0;
-    let answeredRequired = 0;
-
-    for (const requirement of levelRequirements) {
-      const { questionId, isRequired, condition } = requirement;
-      
-      // Check if question is visible
-      if (condition && !this.evaluateCondition(responseSet, condition)) {
-        continue; // Skip if not applicable
-      }
-
-      total++;
-      if (isRequired) {
-        required++;
-      }
-
-      if (responseSet.hasResponse(questionId)) {
-        const response = responseSet.getResponse(questionId);
-        const value = responseSet.getResponseValue(questionId);
-        
-        if (value !== null && value !== undefined && value !== '') {
-          answered++;
-          if (isRequired) {
-            answeredRequired++;
+        // Element-level requirement (single)
+        if (el.requirement) {
+          requirements.push({
+            questionId: el.name,
+            level: this.parseRequirementLevel(el.requirement.level, levelNames),
+            isRequired: true,
+            expectedValue: el.requirement.requireTrue,
+            condition: el.visibleIf || null,
+            source: 'element',
+            elementType: el.type,
+            minChoiceLevel,
+            choiceRequiredValues
+          });
+        }
+        // Element-level requirements (array of per-level criteria)
+        if (Array.isArray(el.requirements) && el.requirements.length) {
+          for (const req of el.requirements) {
+            if (!req) continue;
+            requirements.push({
+              questionId: el.name,
+              level: this.parseRequirementLevel(req.level, levelNames),
+              isRequired: true,
+              expectedValue: req.requireTrue, // may be undefined; then non-empty suffices
+              condition: el.visibleIf || null,
+              source: 'element',
+              elementType: el.type,
+              minChoiceLevel,
+              choiceRequiredValues
+            });
           }
         }
-      }
-    }
-
-    return { total, answered, required, answeredRequired };
-  }
-
-  /**
-   * Evaluate conditional logic for question visibility
-   * @param {ResponseSet} responseSet - The response set
-   * @param {Object} condition - The condition to evaluate
-   * @returns {boolean} - Whether the condition is met
-   */
-  static evaluateCondition(responseSet, condition) {
-    const { questionId, operator, value } = condition;
-    
-    if (!responseSet.hasResponse(questionId)) {
-      return false;
-    }
-
-    const responseValue = responseSet.getResponseValue(questionId);
-
-    switch (operator) {
-      case '==':
-        return responseValue === value;
-      case '!=':
-        return responseValue !== value;
-      case '>':
-        return responseValue > value;
-      case '<':
-        return responseValue < value;
-      case '>=':
-        return responseValue >= value;
-      case '<=':
-        return responseValue <= value;
-      case 'in':
-        return Array.isArray(value) && value.includes(responseValue);
-      case 'not_in':
-        return Array.isArray(value) && !value.includes(responseValue);
-      default:
-        return false;
-    }
-  }
-
-  /**
-   * Load survey definition from JSON files
-   * @param {string} jurisdiction - The jurisdiction code
-   * @returns {Object} - Survey definition
-   */
-  static async loadSurveyDefinition(jurisdiction) {
-    if (this.surveyCache.has(jurisdiction)) {
-      return this.surveyCache.get(jurisdiction);
-    }
-
-    try {
-      const surveyPath = path.join(__dirname, '../data/survey.json');
-      const surveyData = JSON.parse(await fs.readFile(surveyPath, 'utf8'));
-      
-      const survey = {
-        pages: surveyData.pages,
-        elements: {}
-      };
-
-      // Load all page elements
-      for (const page of surveyData.pages) {
-        const pagePath = path.join(__dirname, `../data/pages/${page}.json`);
-        const pageData = JSON.parse(await fs.readFile(pagePath, 'utf8'));
-        
-        if (pageData.elements) {
-          for (const element of pageData.elements) {
-            if (typeof element === 'string') {
-              // Load sub-element
-              const subElementPath = path.join(__dirname, `../data/pages/${element}.json`);
-              const subElementData = JSON.parse(await fs.readFile(subElementPath, 'utf8'));
-              survey.elements[element] = subElementData;
-            } else {
-              survey.elements[element.name] = element;
+        // Choice-level requirements
+        if (Array.isArray(el.choices)) {
+          for (const choice of el.choices) {
+            if (choice && choice.requirement) {
+              requirements.push({
+                questionId: el.name,
+                level: this.parseRequirementLevel(choice.requirement.level, levelNames),
+                isRequired: true,
+                // To satisfy this requirement, the answer must include/select this choice value
+                expectedValue: (choice.value !== undefined ? choice.value : choice.requirement.requireTrue),
+                condition: el.visibleIf || null,
+                source: 'choice',
+                elementType: el.type,
+                minChoiceLevel,
+                choiceRequiredValues
+              });
             }
           }
         }
       }
-
-      this.surveyCache.set(jurisdiction, survey);
-      return survey;
-    } catch (error) {
-      console.error('Error loading survey definition:', error);
-      return { pages: [], elements: {} };
     }
-  }
-
-  /**
-   * Extract requirements from survey definition
-   * @param {Object} survey - Survey definition
-   * @returns {Array} - Array of requirements
-   */
-  static extractRequirements(survey) {
-    const requirements = [];
-
-    for (const [elementName, element] of Object.entries(survey.elements)) {
-      if (element.elements) {
-        for (const subElement of element.elements) {
-          if (subElement.requirement) {
-            requirements.push({
-              questionId: subElement.name,
-              level: this.parseRequirementLevel(subElement.requirement.level),
-              isRequired: subElement.isRequired || false,
-              expectedValue: subElement.requirement.requireTrue,
-              condition: this.parseCondition(subElement.visibleIf)
-            });
-          }
-        }
-      } else if (element.requirement) {
-        requirements.push({
-          questionId: element.name,
-          level: this.parseRequirementLevel(element.requirement.level),
-          isRequired: element.isRequired || false,
-          expectedValue: element.requirement.requireTrue,
-          condition: this.parseCondition(element.visibleIf)
-        });
-      }
-    }
-
+    if (this.DEBUG) console.debug('[LevelCalc] extracted from sections: sections=%d elements=%d requirements=%d', sections.length, elementCount, requirements.length);
     return requirements;
   }
 
-  /**
-   * Parse requirement level from string to number
-   * @param {string|number} level - Level value
-   * @returns {number} - Level index (0-4)
-   */
-  static parseRequirementLevel(level) {
-    if (typeof level === 'number') {
-      return Math.max(0, Math.min(4, level));
-    }
-    
-    const levelMap = {
-      'none': 0,
-      'basic': 1,
-      'pilot': 2,
-      'standard': 3,
-      'exemplar': 4
-    };
-    
-    return levelMap[level] || 0;
+  static getResponseValue(responseSet, questionId) {
+    const map = responseSet?.responses;
+    if (!map) return null;
+    let r = null;
+    if (typeof map.get === 'function') r = map.get(questionId);
+    else if (typeof map === 'object') r = map[questionId];
+    return r && (r.value ?? r.stringValue ?? r.textValue ?? r.choiceRef ?? null);
   }
 
-  /**
-   * Parse conditional logic from visibleIf string
-   * @param {string} visibleIf - Conditional logic string
-   * @returns {Object|null} - Parsed condition or null
-   */
-  static parseCondition(visibleIf) {
-    if (!visibleIf) return null;
+  static hasResponse(responseSet, questionId) {
+    const map = responseSet?.responses;
+    if (!map) return false;
+    if (typeof map.has === 'function') return map.has(questionId);
+    if (typeof map === 'object') return Object.prototype.hasOwnProperty.call(map, questionId);
+    return false;
+  }
 
-    // Simple parsing for basic conditions like "{questionId} = 'value'"
-    const match = visibleIf.match(/\{([^}]+)\}\s*([=!<>]+)\s*['"]([^'"]+)['"]/);
-    if (match) {
-      return {
-        questionId: match[1],
-        operator: match[2],
-        value: match[3]
-      };
+  static async meetsLevelRequirements(responseSet, requirements, level) {
+    // To achieve level L, all requirements with level <= L must be satisfied
+    const levelRequirements = requirements.filter(r => r.level <= level);
+    const failures = [];
+    for (const requirement of levelRequirements) {
+      const { questionId, expectedValue, condition, source, elementType, minChoiceLevel, choiceRequiredValues } = requirement;
+      // Check applicability first (visibility/condition). If not applicable, skip.
+      if (condition && !this.evaluateCondition(responseSet, condition)) {
+        if (this.DEBUG) console.debug('[LevelCalc] skip requirement q=%s due to condition=%o', questionId, condition);
+        continue;
+      }
+      // Now requirement applies; verify presence/value
+      if (!this.hasResponse(responseSet, questionId)) {
+        failures.push({ questionId, reason: 'missing', expected: expectedValue, actual: undefined, condition });
+        continue;
+      }
+      const actual = this.getResponseValue(responseSet, questionId);
+      // Special rule: for single-choice question with some choices having requirements, if the selected
+      // choice has no requirement, then you cannot satisfy levels at or above the minimum choice level.
+      if (elementType === 'radiogroup' && source === 'element' && Array.isArray(choiceRequiredValues) && choiceRequiredValues.length) {
+        const selected = actual;
+        const selectedHasReq = choiceRequiredValues.includes(selected);
+        if (!selectedHasReq) {
+          // Block this element-level requirement by marking as mismatch
+          failures.push({ questionId, reason: 'choice_without_requirement', expected: `one of ${JSON.stringify(choiceRequiredValues)}`, actual: selected, condition });
+          continue;
+        }
+      }
+      // Check expected or non-empty
+      let ok;
+      if (typeof expectedValue !== 'undefined') {
+        // Allow for multi-select (checkbox) answers where actual is array
+        if (Array.isArray(actual)) ok = actual.includes(expectedValue);
+        else ok = (actual === expectedValue);
+      } else {
+        ok = (actual !== null && typeof actual !== 'undefined' && String(actual).length > 0);
+      }
+      if (!ok) failures.push({ questionId, reason: 'mismatch', expected: expectedValue, actual, condition });
     }
+    if (this.DEBUG && failures.length) {
+      console.debug('[LevelCalc] level %d failures (%d/%d): %o', level, failures.length, levelRequirements.length, failures.slice(0, 10));
+    }
+    return failures.length === 0;
+  }
 
+  static async meetsRequirement(responseSet, requirement) {
+    const { questionId, expectedValue, condition } = requirement;
+    if (!this.hasResponse(responseSet, questionId)) {
+      if (this.DEBUG) console.debug('[LevelCalc] meetsRequirement q=%s -> NO (missing response)', questionId);
+      return false;
+    }
+    const value = this.getResponseValue(responseSet, questionId);
+    if (condition && !this.evaluateCondition(responseSet, condition)) {
+      if (this.DEBUG) console.debug('[LevelCalc] meetsRequirement n/a due to condition: q=%s value=%o cond=%o', questionId, value, condition);
+      return true;
+    }
+    let ok;
+    if (typeof expectedValue !== 'undefined') ok = (value === expectedValue);
+    else ok = (value !== null && typeof value !== 'undefined' && String(value).length > 0);
+    if (this.DEBUG) console.debug('[LevelCalc] meetsRequirement q=%s expected=%o value=%o -> %s', questionId, expectedValue, value, ok ? 'OK' : 'NO');
+    return ok;
+  }
+
+  static async calculateLevelProgress(responseSet, levelRequirements) {
+    let total = 0, answered = 0, required = 0, answeredRequired = 0;
+    for (const requirement of levelRequirements) {
+      const { questionId, isRequired, condition } = requirement;
+      if (condition && !this.evaluateCondition(responseSet, condition)) continue;
+      total += 1;
+      if (isRequired) required += 1;
+      if (this.hasResponse(responseSet, questionId)) {
+        const value = this.getResponseValue(responseSet, questionId);
+        if (value !== null && typeof value !== 'undefined' && String(value).length > 0) {
+          answered += 1;
+          if (isRequired) answeredRequired += 1;
+        }
+      }
+    }
+    return { total, answered, required, answeredRequired };
+  }
+
+  static evaluateCondition(responseSet, condition) {
+    // Accept either parsed object or raw SurveyJS visibleIf string
+    if (!condition) return true;
+    if (typeof condition === 'string') {
+      // Very basic parser for expressions like "{var} = 'val'" with optional and/or
+      try {
+        const expr = condition.replace(/\bAND\b/gi, 'and').replace(/\bOR\b/gi, 'or');
+        const tokens = expr.split(/\s+(and|or)\s+/i);
+        let result = null;
+        let pendingOp = null;
+        for (let i = 0; i < tokens.length; i++) {
+          const tok = tokens[i];
+          if (tok.toLowerCase && (tok.toLowerCase() === 'and' || tok.toLowerCase() === 'or')) {
+            pendingOp = tok.toLowerCase();
+            continue;
+          }
+          const m = tok.match(/\{([^}]+)\}\s*([=!<>]+)\s*['"]([^'"]+)['"]/);
+          let cur = false;
+          if (m) {
+            const varName = m[1];
+            const op = m[2];
+            const val = m[3];
+            const has = this.hasResponse(responseSet, varName);
+            const actual = has ? this.getResponseValue(responseSet, varName) : undefined;
+            switch (op) {
+              case '==': case '=': cur = (actual === val); break;
+              case '!=': case '<>': cur = (actual !== val); break;
+              default: cur = false; break;
+            }
+          }
+          if (result === null) result = cur;
+          else if (pendingOp === 'and') result = result && cur;
+          else if (pendingOp === 'or') result = result || cur;
+          pendingOp = null;
+        }
+        return result === null ? true : result;
+      } catch (_) { return true; }
+    }
+    const { questionId, operator, value } = condition || {};
+    if (!questionId) return true;
+    if (!this.hasResponse(responseSet, questionId)) return false;
+    const responseValue = this.getResponseValue(responseSet, questionId);
+    switch (operator) {
+      case '==': case '=': return responseValue === value;
+      case '!=': case '<>': return responseValue !== value;
+      case '>': return responseValue > value;
+      case '<': return responseValue < value;
+      case '>=': return responseValue >= value;
+      case '<=': return responseValue <= value;
+      case 'in': return Array.isArray(value) && value.includes(responseValue);
+      case 'not_in': return Array.isArray(value) && !value.includes(responseValue);
+      default: return false;
+    }
+  }
+
+  static parseRequirementLevel(level, levelNames = []) {
+    // Coerce numeric-like strings
+    if (typeof level === 'number' || (typeof level === 'string' && /^\d+$/.test(level))) {
+      const n = typeof level === 'number' ? level : Number(level);
+      const max = Math.max(0, levelNames.length - 1);
+      return Math.max(0, Math.min(max, n));
+    }
+    const idx = levelNames.findIndex(n => String(n || '').toLowerCase() === String(level || '').toLowerCase());
+    if (idx >= 0) return idx;
+    // Fallback common names
+    const defaultMap = { none: 0, basic: 1, pilot: 2, standard: 3, exemplar: 4 };
+    const key = String(level || '').toLowerCase();
+    if (key in defaultMap) return defaultMap[key];
+    return 0;
+  }
+
+  static getSurveyLevelMeta(survey) {
+    // Prefer survey.levels titles by index
+    let levelNames = [];
+    try {
+      const lv = survey?.levels;
+      const obj = lv instanceof Map ? Object.fromEntries(lv) : lv;
+      if (obj && typeof obj === 'object') {
+        Object.entries(obj).forEach(([k, v]) => {
+          const i = Number(k);
+          if (Number.isFinite(i)) levelNames[i] = (v && v.title) ? v.title : undefined;
+        });
+      }
+    } catch (_) {}
+    // Fill from requirementLevels if missing
+    if (!levelNames.length && Array.isArray(survey?.requirementLevels)) {
+      levelNames = survey.requirementLevels.map(n => String(n || '')).map(s => s.charAt(0).toUpperCase() + s.slice(1));
+    }
+    // Ensure at least defaults
+    if (!levelNames.length) levelNames = ['None', 'Basic', 'Pilot', 'Standard', 'Exemplar'];
+    // Normalize holes
+    for (let i = 0; i < levelNames.length; i += 1) {
+      if (!levelNames[i]) levelNames[i] = String(i);
+    }
+    const maxLevel = levelNames.length - 1;
+    return { levelNames, maxLevel };
+  }
+
+  static parseCondition(visibleIf) {
+    if (!visibleIf || typeof visibleIf !== 'string') return null;
+    const m = visibleIf.match(/\{([^}]+)\}\s*([=!<>]+)\s*['"]([^'"]+)['"]/);
+    if (m) return { questionId: m[1], operator: m[2], value: m[3] };
     return null;
   }
 }
 
-module.exports = LevelCalculationService; 
+export default LevelCalculationService;
+export { LevelCalculationService };

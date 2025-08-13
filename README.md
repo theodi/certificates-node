@@ -241,16 +241,13 @@ npm run migrate:certificates:full          # migrate all datasets with published
 ### Public web routes
 - `GET /` → Home
 - `GET /about` → About page
-- `GET /datasets` → Browse published datasets (no login)
-- `GET /datasets/data` → JSON for published datasets table
-- `GET /datasets/:id` → Dataset drill-down (published for anon; owner/all when logged in)
-- `GET /datasets/:id/data` → JSON for dataset drill-down
+- `GET /datasets` → Browse published datasets (HTML) or JSON list via content negotiation
+- `GET /datasets/:id` → Dataset drill-down (HTML) or JSON via content negotiation
 - `GET /datasets/:datasetId/certificates` → List or redirect to a certificate for dataset
 - `GET /datasets/:datasetId/certificates/:responseSetId` → Render a certificate
 
 ### Authenticated web routes
-- `GET /datasets/my` → “My Datasets” (owner; all for admin)
-- `GET /datasets/my/data` → JSON for “My Datasets”
+- `GET /datasets/my` → “My Datasets” (HTML) or JSON via content negotiation (owner; all for admin)
 - `GET /auth/*` → Auth routes (login, profile, logout)
 
 ### Legacy route redirects
@@ -258,6 +255,8 @@ npm run migrate:certificates:full          # migrate all datasets with published
 
 ### JSON survey endpoint
 - `GET /data/survey` → Latest non-alpha survey definition
+
+Note on content negotiation: send `Accept: application/json` to receive JSON; otherwise HTML is rendered.
 
 ## 🧪 Testing
 

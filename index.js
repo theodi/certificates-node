@@ -7,7 +7,6 @@ import { fileURLToPath } from 'url';
 import cors from 'cors';
 import express from 'express';
 import mongoose from 'mongoose';
-import Survey from './models/Survey.js';
 import surveysRouter from './routes/surveys.js';
 import datasetsRouter from './routes/datasets.js';
 import redirectsRouter from './routes/redirects.js';
@@ -81,6 +80,7 @@ app.use((req, res, next) => {
 app.use('/auth', authRoutes);
 app.use('/', redirectsRouter);
 app.use('/datasets', datasetsRouter);
+app.use('/surveys', surveysRouter);
 
 app.get('/admin', function(req,res) {
   res.redirect('/auth/google');

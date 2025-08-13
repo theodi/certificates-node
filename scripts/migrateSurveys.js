@@ -303,10 +303,11 @@ class SurveyMigration {
       }
       
        // Get questions for this section AND requirements text for this section
-       const [questionsResult] = await this.mysqlConnection.execute(`
-         SELECT id, text, short_text, help_text, reference_identifier, display_order, 
-                display_type, is_requirement, corresponding_requirements, required,
-                help_text_more_url, text_as_statement, display_on_certificate, pick
+        const [questionsResult] = await this.mysqlConnection.execute(`
+          SELECT id, text, short_text, help_text, reference_identifier, display_order, 
+                 display_type, is_requirement, corresponding_requirements, required,
+                 help_text_more_url, text_as_statement, display_on_certificate, pick,
+                 answer_corresponding_to_requirement_id
          FROM questions 
          WHERE survey_section_id = ?
          ORDER BY display_order
@@ -366,7 +367,8 @@ class SurveyMigration {
           }
           const level = this.parseRequirementLevel(requirementId);
           const text = this.stripHtml(question.text || '').trim();
-          pendingRequirementEntries.push({ level, text });
+          const answerId = question.answer_corresponding_to_requirement_id || null;
+          pendingRequirementEntries.push({ level, text, answerId });
           continue;
         }
 
@@ -472,16 +474,28 @@ class SurveyMigration {
       element.isRequired = true;
     }
 
-    // Add requirement level and reason text provided by following labels
+    // Aggregate requirements from labels into element.requirements (per-level texts)
     if (Array.isArray(requirementEntries) && requirementEntries.length > 0) {
-      const highestLevel = this.getHighestRequirementLevelFromEntries(requirementEntries);
-      const progressText = this.getProgressTextForLevel(requirementEntries, highestLevel);
-      element.requirement = {
-        level: highestLevel,
-        progressText: {
-          default: progressText || `Complete this question to meet requirements`
-        }
-      };
+      const byLevel = new Map();
+      for (const re of requirementEntries) {
+        if (!byLevel.has(re.level)) byLevel.set(re.level, []);
+        byLevel.get(re.level).push(re.text);
+      }
+      const requirementsArr = Array.from(byLevel.entries()).sort((a,b)=>a[0]-b[0]).map(([level, texts]) => ({
+        level,
+        progressText: { default: (texts[texts.length - 1] || 'Complete this question to meet requirements') }
+      }));
+      if (requirementsArr.length) element.requirements = requirementsArr;
+    }
+
+    // Fallback: if this question is required in MySQL, ensure a Level 1 requirement exists
+    // This guarantees the runtime level calculator can see baseline requirements
+    if (!element.requirement && !element.requirements && (question.required === 'required')) {
+      const baseText = this.stripHtml(question.text || question.short_text || '').trim();
+      element.requirements = [{
+        level: 1,
+        progressText: { default: `You need to answer "${baseText || 'this question'}"` }
+      }];
     }
 
     // Add choices for choice questions
@@ -493,6 +507,16 @@ class SurveyMigration {
         };
         if (answer.text_as_statement) {
           choice.statementText = { default: answer.text_as_statement };
+        }
+        // Attach requirement per choice if any label mapped to this answer id
+        if (Array.isArray(requirementEntries) && requirementEntries.length) {
+          const match = requirementEntries.find(re => re.answerId && Number(re.answerId) === Number(answer.id));
+          if (match) {
+            choice.requirement = {
+              level: match.level,
+              progressText: { default: match.text }
+            };
+          }
         }
         return choice;
       });

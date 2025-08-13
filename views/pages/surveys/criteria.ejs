@@ -1,0 +1,40 @@
+<%- include('../../partials/header') %>
+<section class="content-block white">
+  <h1>Criteria: <%= survey.fullTitle || survey.title %></h1>
+  <p>Locale: <strong><%= (survey.localleText || survey.localle || '').toUpperCase() %></strong></p>
+  <p><a href="/surveys">← Back to Surveys</a></p>
+
+  <% const levelNames = {1: 'Basic', 2: 'Pilot', 3: 'Standard', 4: 'Exemplar'}; %>
+
+  <% [1,2,3,4].forEach(function(level){
+       const items = levels[level] || [];
+  %>
+    <h2>Level <%= level %> — <%= levelNames[level] %></h2>
+    <% if (!items.length) { %>
+      <p>No explicit requirements recorded for this level.</p>
+    <% } else { %>
+      <ul>
+        <% items.forEach(function(it){ %>
+          <li>
+            <strong><%= it.sectionTitle %></strong>: <%= it.questionTitle %>
+            <% if (it.choiceText) { %>
+              <div>Choice: <em><%= it.choiceText %></em></div>
+            <% } %>
+            <% if (it.requirementText) { %>
+              <div>Reason: <%= it.requirementText %></div>
+            <% } %>
+            <% if (it.visibleIf) { %>
+              <details>
+                <summary>Visibility condition</summary>
+                <code><%= it.visibleIf %></code>
+              </details>
+            <% } %>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  <% }) %>
+</section>
+<%- include('../../partials/footer') %>
+
+

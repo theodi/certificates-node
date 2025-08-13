@@ -3,8 +3,8 @@
       <h1>
         <script>
           (function(){
-            const isMyPath = window.location.pathname.startsWith('/datasets/my');
-            const loggedIn = <%= user ? 'true' : 'false' %>;
+            var isMyPath = window.location.pathname.indexOf('/datasets/my') === 0;
+            var loggedIn = <%- JSON.stringify(!!user) %>;
             document.currentScript.parentElement.textContent = (loggedIn || isMyPath) ? 'My Datasets' : 'Datasets';
           })();
         </script>
@@ -21,6 +21,9 @@
     </thead>
     <tbody></tbody>
   </table>
+  <p>
+    <a class="button" href="/datasets/new">+ Add new dataset</a>
+  </p>
 </section>
 
 <link rel="stylesheet" href="/lib/DataTables/datatables.css" />
@@ -29,9 +32,10 @@
   document.addEventListener('DOMContentLoaded', function() {
     const table = new DataTable('#responsesTable', {
       ajax: (function(){
-        const loggedIn = <%= user ? 'true' : 'false' %>;
-        const isMyPath = window.location.pathname.startsWith('/datasets/my');
-        return (loggedIn || isMyPath) ? '/datasets/my/data' : '/datasets/data';
+        var loggedIn = <%- JSON.stringify(!!user) %>;
+        var isMyPath = window.location.pathname.indexOf('/datasets/my') === 0;
+        var url = (loggedIn || isMyPath) ? '/datasets/my' : '/datasets';
+        return { url: url, headers: { 'Accept': 'application/json' } };
       })(),
       processing: true,
       serverSide: false,

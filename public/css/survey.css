@@ -36,6 +36,7 @@
     cursor: pointer;
     font-weight: bold;
     color: var(--color-dark-blue);
+    background-color: var(--color-light-grey);
 }
 .dropdown-content {
     margin-top: 5px;
@@ -48,4 +49,5 @@
 }
 .dropdown-content li {
     margin-bottom: 5px;
+    font-size: 0.8em;
 }

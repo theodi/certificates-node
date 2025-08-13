@@ -1,0 +1,15 @@
+<%- include('../../partials/header') %>
+<section class="content-block white">
+  <h1>Create or Select Dataset</h1>
+  <form method="post" action="/datasets/new">
+    <label for="title">Dataset Title</label>
+    <input type="text" id="title" name="title" required />
+    <label for="url">Dataset URL</label>
+    <input type="url" id="url" name="url" required />
+    <br/>
+    <button type="submit">Continue</button>
+  </form>
+</section>
+<%- include('../../partials/footer') %>
+
+

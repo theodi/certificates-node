@@ -1,0 +1,61 @@
+<%- include('../../partials/header') %>
+<section class="content-block white">
+  <h1>Surveys</h1>
+  <div id="surveysContainer"></div>
+</section>
+
+<link rel="stylesheet" href="/lib/DataTables/datatables.css" />
+<script src="/lib/DataTables/datatables.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', async function() {
+    const container = document.getElementById('surveysContainer');
+    const res = await fetch('/surveys', { headers: { 'Accept': 'application/json' } });
+    const payload = await res.json();
+    const titles = payload.titles || {};
+    const titleOrder = payload.titleOrder || Object.keys(titles);
+    titleOrder.forEach(title => {
+      const tableId = `tbl_${btoa(title).replace(/[^A-Za-z0-9]/g,'')}`;
+      const wrap = document.createElement('div');
+      wrap.innerHTML = `
+        <h2>${title}</h2>
+        <table id="${tableId}" class="display" style="width:100%">
+          <thead>
+            <tr>
+              <th>Locale</th>
+              <th>Version</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>`;
+      container.appendChild(wrap);
+      const rows = (titles[title] || []).map(it => ({
+        locale: (it.localleText || it.localle || '').toUpperCase(),
+        version: it.version,
+        status: it.status,
+        createdAt: it.createdAt,
+        actions: `<a href="/surveys/${it.id}/criteria">View criteria</a>`
+      }));
+      new DataTable(`#${tableId}`, {
+        data: rows,
+        processing: false,
+        serverSide: false,
+        searching: false,
+        ordering: true,
+        responsive: true,
+        columns: [
+          { data: 'locale' },
+          { data: 'version' },
+          { data: 'status' },
+          { data: 'createdAt', render: (d) => d ? new Date(d).toLocaleString() : '' },
+          { data: 'actions', orderable: false, searchable: false }
+        ]
+      });
+    });
+  });
+  </script>
+<%- include('../../partials/footer') %>
+
+

@@ -4,6 +4,9 @@
   <p>
     <a href="/datasets">← Back to Datasets</a>
   </p>
+  <p style="margin-bottom: 12px;">
+    <a class="button" href="/datasets/<%= datasetId %>/certificates/new">Create new certificate</a>
+  </p>
   <table id="certsTable" class="display" style="width:100%">
     <thead>
       <tr>
@@ -24,7 +27,7 @@
   document.addEventListener('DOMContentLoaded', function() {
     const datasetId = '<%= datasetId %>';
     const table = new DataTable('#certsTable', {
-      ajax: `/datasets/${datasetId}/data`,
+      ajax: { url: `/datasets/${datasetId}`, headers: { 'Accept': 'application/json' } },
       processing: true,
       serverSide: false,
       searching: true,

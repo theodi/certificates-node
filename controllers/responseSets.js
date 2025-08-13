@@ -22,11 +22,12 @@ export async function listResponseSetsData(req, res, next) {
   try {
     const user = await getCurrentUser(req);
     const isAdmin = !!user?.admin;
-    const match = isAdmin ? {} : { userId: user?._id };
+    const ownedMatch = isAdmin ? {} : { userId: user?._id };
+    const managedFilter = isAdmin ? {} : { managerUserIds: user?._id };
 
     // Aggregate to one row per dataset (for datasets where the user has any response set)
     const grouped = await ResponseSet.aggregate([
-      { $match: match },
+      { $match: ownedMatch },
       { $group: {
           _id: '$datasetId',
           myCount: { $sum: 1 },
@@ -37,7 +38,11 @@ export async function listResponseSetsData(req, res, next) {
 
     const datasetIdToAgg = new Map(grouped.map(g => [String(g._id), g]));
     const datasetIds = grouped.map(g => g._id);
-    const datasets = await Dataset.find({ _id: { $in: datasetIds } })
+    // Datasets the user manages (union with datasets they have certificates in)
+    const datasetQuery = isAdmin
+      ? {}
+      : { $or: [ { _id: { $in: datasetIds } }, managedFilter ] };
+    const datasets = await Dataset.find(datasetQuery)
       .select('_id title url removed legacyId createdAt updatedAt')
       .lean();
 
@@ -144,7 +149,7 @@ export async function listDatasetCertificatesData(req, res, next) {
 
     const cap = (s) => (typeof s === 'string' && s.length) ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 
-    const data = docs.map(doc => ({
+      const data = docs.map(doc => ({
       id: String(doc._id),
       legacyId: doc.legacyId || null,
       state: doc.state,
@@ -153,7 +158,7 @@ export async function listDatasetCertificatesData(req, res, next) {
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
       viewUrl: `/datasets/${id}/certificates/${String(doc._id)}`,
-      editUrl: `/datasets/${String(doc._id)}/edit`
+        editUrl: `/datasets/${id}/certificates/${String(doc._id)}/edit`
     }));
 
     res.json({ data });
