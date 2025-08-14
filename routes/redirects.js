@@ -14,6 +14,9 @@ router.get('/:locale/datasets/:datasetId/certificates/:responseSetId', (req, res
 router.get('/:locale/datasets/:datasetId/certificate', (req, res) => {
   res.redirect(301, `/datasets/${req.params.datasetId}/certificate`);
 });
+router.get('/:locale/datasets/:datasetId/certificate/embed', (req, res) => {
+  res.redirect(301, `/datasets/${req.params.datasetId}/certificate/embed`);
+});
 
 router.get('/:locale/datasets/', (req, res) => {
   res.redirect(301, `/datasets/`);

@@ -60,6 +60,7 @@ function resolveAnswerEntries(element, responseValue, locale = 'en') {
 export async function renderCertificate(req, res, next) {
   try {
     const { datasetId, responseSetId } = req.params;
+    const isEmbed = req.embed || false;
 
     // Response set id is required in the new scheme
     let rs = await ResponseSet.findById(responseSetId).lean();
@@ -225,7 +226,9 @@ export async function renderCertificate(req, res, next) {
     const page = { title: dataTitle, link: `/datasets/${datasetId}/certificates/${responseSetId}` };
     res.locals.page = page;
 
-    res.render('pages/certificates/show', viewModel);
+    // Choose template based on embed flag
+    const template = isEmbed ? 'pages/certificates/embed' : 'pages/certificates/show';
+    res.render(template, viewModel);
   } catch (err) {
     console.error('Error rendering certificate', err);
     const error = new Error('Server error');
@@ -316,6 +319,7 @@ export async function listDatasetCertificatesData(req, res, next) {
 export async function findSingleCertificate(req, res, next) {
   try {
     const { datasetId } = req.params;
+    const isEmbed = req.embed || false;
   
     const user = await getCurrentUser(req);
     const isAdmin = !!user?.admin;
@@ -355,7 +359,8 @@ export async function findSingleCertificate(req, res, next) {
     const published = sets.filter(s => s.state === 'published');
     if ((user && !isAdmin && sets.length === 1) || (!user && published.length === 1)) {
       const target = (user && !isAdmin) ? sets[0] : published[0];
-      return res.redirect(302, `/datasets/${datasetDoc._id}/certificates/${target._id}`);
+      const embedSuffix = isEmbed ? '/embed' : '';
+      return res.redirect(302, `/datasets/${datasetDoc._id}/certificates/${target._id}${embedSuffix}`);
     }
     else {
       return res.redirect(302, `/datasets/${datasetDoc._id}/certificates`);

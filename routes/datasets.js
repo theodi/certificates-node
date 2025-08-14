@@ -39,6 +39,10 @@ router.get('/:datasetId/certificates/:responseSetId', (req, res, next) =>
     json: () => getResponseSetJson(req, res, next)
   })
 );
+router.get('/:datasetId/certificates/:responseSetId/embed', (req, res, next) => {
+  req.embed = true;
+  return renderCertificate(req, res, next);
+});
 router.patch('/:datasetId/certificates/:responseSetId', ensureAuthenticated, saveResponsesPatch);
 router.post('/:datasetId/certificates/:responseSetId/publish', ensureAuthenticated, publishDraft);
 
@@ -51,6 +55,10 @@ router.get('/:datasetId/certificates', (req, res, next) =>
 );
 
 router.get('/:datasetId/certificate', findSingleCertificate);
+router.get('/:datasetId/certificate/embed', (req, res, next) => {
+  req.embed = true;
+  return findSingleCertificate(req, res, next);
+});
 
 // Delete routes
 router.delete('/:datasetId', ensureAuthenticated, deleteDataset);
