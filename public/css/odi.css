@@ -21,6 +21,8 @@
     --color-dark-green: #1DD3A7;
     --color-progress-pie-progress: #a5e6b3;
 
+    --text-main: var(--color-black);
+
     /* Font Family */
     --font-sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 

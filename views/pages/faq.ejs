@@ -1,0 +1,196 @@
+<%- include('../partials/header') %>
+<%
+/**
+ * FAQ page (EJS)
+ * Usage:
+ *   res.render('pages/faq');
+ *
+ * If you want to inject/override FAQs from your route, pass:
+ *   res.render('pages/faq', { faqs: [...] })
+ */
+ const defaultFaqs = [
+ {
+   q: 'What is ODI Certificates?',
+   a: `<p>ODI Certificates is an online service developed and maintained by the Open Data Institute that helps assess and recognise the sustainable publication and sharing of data in trusted data ecosystems. </p>
+       <p>The platform supports multiple certificate types for different data contexts (open or shared). Currently, it provides the <strong>Open Data Certificate</strong>, which focuses on best practice for publishing open data.</p>`
+ },
+ {
+   q: 'Why are ODI Certificates useful?',
+   a: `<p>ODI Certificates provide an independent, trusted way to demonstrate that data has been published or shared using sustainable and high-quality practices. They help build trust in data, support its long-term reuse, and encourage organisations to adopt and maintain best practice in data management.</p>
+       <p>Certificates available — such as the Open Data Certificate — build upon existing global standards and frameworks (including the Open Definition, 5★ of Open Data, Sunlight Principles, DCAT and others) to provide a clear, structured assessment and practical guidance for improvement.</p>`
+ },
+ {
+   q: 'How do ODI Certificates work?',
+   a: `<p>Each certificate is based on a tailored questionnaire that assesses the level of support and steps taken to make data reusable and discoverable. Depending on the answers, a certificate level is awarded and a badge can be embedded on the publisher’s website to communicate this to users.</p>`
+ },
+ {
+   q: 'How are ODI Certificates different to existing standards such as opendefinition.org, 5★ of Open Data, Sunlight Principles, DCAT etc?',
+   a: `<p>ODI Certificates build upon these existing standards. They provide a clear assessment of how well the data meets best practices and give publishers guidance on how to improve their data for optimal reuse and sharing.</p>`
+ },
+ {
+   q: 'What are the benefits of ODI Certificates to publishers?',
+   a: `<ul>
+         <li>Be recognised for your data publishing or sharing achievements.</li>
+         <li>Engage with the reuser or data consumer community.</li>
+         <li>Build trust and sustainability in the use of your data.</li>
+         <li>Be guided through best practice standards.</li>
+         <li>Receive a free report on how to improve your data publication or sharing practices.</li>
+       </ul>`
+ },
+ {
+   q: 'What are the benefits of ODI Certificates to data users?',
+   a: `<p><strong>Level of dependability</strong> – publishers are asked key questions about copyright, timeliness, how long the dataset will be supported and updated, as well as ensuring thorough documentation.</p>
+       <p><strong>Adherence to best practices</strong> – higher certificate levels indicate greater commitments from publishers to ensure their data is reliable, helping users identify quality, trusted data.</p>
+       <p><strong>Independent assessment</strong> – ODI Certificates are independent of any particular data publishing platform or metadata standard, combining global best practices to ensure that data is made available sustainably with the information needed for reuse.</p>`
+ },
+ {
+   q: 'Who is using ODI Certificates?',
+   a: `<p>Governments, public sector bodies, private companies, NGOs and other organisations around the world are using ODI Certificates to demonstrate quality and build trust in their data. For example, the Open Data Certificate is used by:</p>
+       <ul>
+         <li>UK national government (data.gov.uk)</li>
+         <li>Greater London Authority (data.london.gov.uk)</li>
+         <li>Australia Queensland (data.qld.gov.au)</li>
+         <li>Office of National Statistics</li>
+         <li>UK Data Service</li>
+       </ul>`
+ },
+ {
+   q: 'What does an ODI Certificate cover? Does it tell me about the quality of the data itself?',
+   a: `<p>Certificates primarily assess the surrounding publication or sharing process (privacy, copyright, communication, regular updates, formats used, etc.). They do not directly validate the data content itself, although some certificates may incorporate automated data validation in the future.</p>
+       <p>For example, the Open Data Certificate assesses whether appropriate formats are used and may integrate with tools such as CSVlint to validate data against a schema.</p>`
+ },
+ {
+   q: 'How reliable are these certificates if they are self-certified?',
+   a: `<p>Many certificate types include built-in validation steps (e.g., testing links) and support for community validation — external members can flag issues and there is an independent process to check and update certificates in response to concerns.</p><p>In some cases, we offer independent ODI auditing for certification to provide the highest standard of trust.</p>`
+ },
+ {
+   q: 'How do you ensure the legal aspects are relevant across different jurisdictions?',
+   a: `<p>We work with governments, NGOs and domain experts in different jurisdictions to adapt certificate questionnaires. Localised certificates reflect different legal defaults and standards used by publishers or data sharers.</p>`
+ },
+ {
+   q: 'How do you demonstrate that the data has been certified?',
+   a: `<p>Once you have completed the certification process (or reviewed and claimed an automatically pre-filled certificate) and have been awarded a badge, you can embed this badge in your dataset or webpage to link to the full certificate. We provide technical support and tools to help you do this.</p>`
+ },
+ {
+   q: 'I already use data portal software, can certificates be automatically generated from it?',
+   a: `<p>At the moment we do not support automatic generation of certificates from data portal software. However we are happy to work with you to integrate certificates into your portal. Please contact us at <a href="mailto:bizdev@theodi.org">bizdev@theodi.org</a> to discuss this.</p>`
+ },
+   {
+    q: 'Do certificates go out of date?',
+    a: `<p>Yes, but this depends on the data. For example, if the data is updated regularly, the certificate will need to be updated to reflect the current state of the data. Certificates show the date of issue so users can judge when it was last updated.</p>`
+  },
+ {
+    q: 'Can certificates be automatically generated?',
+    a: `<p>Currently we have deprecated the automatic generation of certificates. However, we are working on a new tool that will allow you to automatically generate certificates. We are planning to make use of Generative AI to help with this and hope to launch it in the near future.</p>`
+  },
+  {
+    q: 'What data has been migrated to the new ODI Certificates platform?',
+    a: `<p>We have migrated:</p><ul><li><strong>Certificate drafts</strong> created by known users in 2025.</li>
+          <li><strong>All published certificates</strong> since 2020.</li></ul><p>We have <strong>not</strong> migrated any certificates that have expired before the migration date.</p><p>This means there is a substantial amount of older data that is not available on the new platform. We have a secure backup, and we can extract this if absolutely necessary — please contact us at <a href="mailto:info@theodi.org">info@theodi.org</a> to request this.</p>`
+  },
+  {
+    q: 'How do I log in to see my certificates?',
+    a: `<p>Certificates remain linked to the users who created them. However, the new ODI Certificates platform requires an <strong>ODI account</strong> to log in.</p><p>You can create an account here: <a href="https://theodi.org/account/register/" target="_blank" rel="noopener">https://theodi.org/account/register/</a></p><p><strong>Important:</strong> You must use the <em>same email address</em> that you originally used for your certificates account.</p><p>If you need to recover a certificate linked to an email you no longer have access to, please contact us at <a href="mailto:info@theodi.org">info@theodi.org</a>.</p>`
+  },
+  {
+    q: 'Why can I no longer create a certificate without logging in?',
+    a: `<p>Requiring users to log in prevents spam and reduces the number of empty or incomplete certificates being created.</p>`
+  },
+  {
+    q: 'What has happened to translations?',
+    a: `<p>As part of the migration, we have focused on English as the primary language. Certificate questionnaires that were previously translated remain available in their original languages, but supporting pages such as the FAQ and About pages have been substantially updated in English only.</p><p>If you would like to arrange a translation of the new certificates content, please contact us at <a href="mailto:bizdev@theodi.org">bizdev@theodi.org</a>.</p>`
+  }
+];
+
+
+// Use faqs passed in from route, else defaultFaqs
+let list = (typeof faqs !== 'undefined' && Array.isArray(faqs) && faqs.length > 0)
+  ? faqs
+  : defaultFaqs;
+
+// Simple slugify for IDs/anchors
+const slugify = (s) => (s || '')
+  .toString()
+  .toLowerCase()
+  .replace(/['’]/g, '')
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '');
+%>
+
+<div class="container about">
+    <h1>Frequently Asked Questions</h1>
+  <div class="span8">
+    <div class="faq-layout">
+      <!-- TOC -->
+      <nav class="page-contents-navigation" aria-label="FAQ contents">
+        <h2 class="toc-title">Contents</h2>
+        <ol>
+          <% list.forEach(function(item) { const id = slugify(item.q); %>
+            <li><a href="#<%= id %>"><%= item.q %></a></li>
+          <% }) %>
+        </ol>
+      </nav>
+
+      <!-- FAQ content -->
+      <section class="faq-content">
+        <% list.forEach(function(item) { const id = slugify(item.q); %>
+          <article id="<%= id %>" class="faq-item" aria-labelledby="<%= id %>-q">
+            <h2 id="<%= id %>-q" class="faq-question"><%= item.q %></h2>
+            <div class="faq-answer"><%- item.a %></div>
+            <p class="back-to-top"><a href="#top">Back to top</a></p>
+            <hr />
+          </article>
+        <% }) %>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- Optional minimal styles; move to your CSS file -->
+<style>
+  .faq-layout {
+    display: grid;
+    grid-template-columns: minmax(220px, 280px) 1fr;
+    gap: 20px;
+    align-items: start;
+    margin-top: 20px;
+  }
+  .faq-content {
+   padding-top: 0px !important;
+  }
+  .page-contents-navigation .toc-title { font-size: 1.05rem; margin: 0 0 .5rem 0; }
+  .page-contents-navigation ol { padding-left: 1.1rem; margin: 0; }
+  .page-contents-navigation a { text-decoration: none; }
+  .faq-item { scroll-margin-top: 90px; } /* keep headings clear under sticky headers */
+  .faq-question { font-size: 1.25rem; margin-top: .5rem; }
+  .back-to-top { margin: .5rem 0 1.25rem; }
+  @media (max-width: 900px) {
+    .faq-layout { grid-template-columns: 1fr; }
+  }
+</style>
+
+<!-- Smooth scroll (optional) -->
+<script>
+  (function () {
+    // Add an invisible "top" anchor for "Back to top" links
+    if (!document.getElementById('top')) {
+      const topAnchor = document.createElement('div');
+      topAnchor.id = 'top';
+      document.body.prepend(topAnchor);
+    }
+
+    // Optional: smooth-scroll for same-page anchors
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', (e) => {
+        const id = a.getAttribute('href').slice(1);
+        const target = document.getElementById(id);
+        if (target) {
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          history.replaceState(null, '', '#' + id);
+        }
+      });
+    });
+  })();
+</script>
+<%- include('../partials/footer') %>

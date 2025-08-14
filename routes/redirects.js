@@ -15,6 +15,10 @@ router.get('/:locale/datasets/:datasetId/certificate', (req, res) => {
   res.redirect(301, `/datasets/${req.params.datasetId}/certificates`);
 });
 
+router.get('/:locale/datasets/', (req, res) => {
+  res.redirect(301, `/datasets/`);
+});
+
 export default router;
 
 

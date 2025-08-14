@@ -104,6 +104,30 @@ app.get('/about', function(req, res) {
   res.locals.page = page;
   res.render('pages/about');
 });
+app.get('/faq', function(req, res) {
+  const page = {
+    title: "FAQ",
+    link: "/faq"
+  };
+  res.locals.page = page;
+  res.render('pages/faq');
+});
+app.get('/about/ODC/what-you-need', function(req, res) {
+  const page = {
+    title: "What you need",
+    link: "/about/odc/what-you-need"
+  };
+  res.locals.page = page;
+  res.render('pages/odc/what-you-need');
+});
+app.get('/about/ODC/badge-levels', function(req, res) {
+  const page = {
+    title: "Badge Levels",
+    link: "/about/odc/badge-levels"
+  };
+  res.locals.page = page;
+  res.render('pages/odc/badge-levels');
+});
 
 // Connect to MongoDB for loading surveys from the database
 (async () => {

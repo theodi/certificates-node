@@ -38,10 +38,12 @@
                     <li><a href="/datasets/new" class="toggle-link <% if (page.link === '/datasets/new') { %>selected<% } %>">Create new certificate</a></li>
                     <% if(user) { %>
                         <li><a href="/datasets/my" class="toggle-link <% if (page.link === '/datasets/my') { %>selected<% } %>">Your certificates</a></li>
+						<li><a href="/about" class="toggle-link <% if (page.link === '/about') { %>selected<% } %>">About</a></li>
+						<li><a href="/faq" class="toggle-link <% if (page.link === '/faq') { %>selected<% } %>">FAQ</a></li>
 						<li>
 							<a style="padding: 0;" class="toggle-link <% if (page.link === '/auth/profile') { %>selected<% } %>" href="/auth/profile"><%= user ? (user.displayName || (user.first_name && user.last_name ? user.first_name + ' ' + user.last_name : user.email)) : 'Guest' %></a>
 							<form style="display: inline-flex;" id="logout_form" action="/auth/logout" method="post">
-								 &nbsp;(<a href="javascript:;" onclick="document.getElementById('logout_form').submit();">Logout)</a>
+								 &nbsp;<a href="javascript:;" onclick="document.getElementById('logout_form').submit();">(Logout)</a>
 							</form>
 						</li>
 					<% } else { %>

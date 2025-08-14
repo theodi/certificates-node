@@ -1,0 +1,175 @@
+<%- include('../partials/header') %>
+<%
+// Optional: allow routes to be injected from the server.
+// In your route handler you can do: res.render('pages/about', { urls: { badgeLevels: '/badge-levels', ... } })
+const urls = (typeof locals !== 'undefined' && locals.urls) ? locals.urls : {};
+const u = {
+  badgeLevels: urls.badgeLevels || '/about/ODC/badge-levels',
+  whatYouNeed: urls.whatYouNeed || '/about/ODC/what-you-need',
+  faq:         urls.faq         || '/faq',
+  autocert:    urls.autocert    || '/autocertification',
+  contact:     urls.contact     || '/contact',
+  startCert:   urls.startCert   || '/datasets/new',
+  exampleCert: urls.exampleCert || '/certificates/example',
+  ckan:        urls.ckan        || 'https://ckan.org/',
+  dcat:        urls.dcat        || 'https://www.w3.org/TR/vocab-dcat/'
+};
+%>
+
+<div class="container about">
+  <h1>About Open Data Certificate</h1>
+  <div class="about-layout">
+    <!-- TOC -->
+    <nav class="page-contents-navigation" aria-label="About page contents">
+      <h2 class="toc-title">Contents</h2>
+      <ol>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#how-to-get">How to get certificates</a></li>
+        <li><a href="#publisher-benefits">Publisher benefits</a></li>
+        <li><a href="#user-benefits">Data user benefits</a></li>
+        <li><a href="#platform-technologists">Data platform technologists</a></li>
+        <li><a href="#related-links">Related links</a></li>
+      </ol>
+    </nav>
+
+    <!-- About content -->
+    <section class="about-content">
+        <div class="benefits-section" id="overview">
+          <h2>Overview</h2>
+          <p>
+            <strong>certificates.theodi.org</strong> is an online service from the Open Data Institute that helps
+            organisations assess and evidence the quality of their data and the practices that support its trustworthy
+            publication and sharing across data ecosystems.
+          </p>
+          <p>
+            The platform is designed to support <em>multiple certificate types</em> for different data-sharing contexts
+            (open and shared). Today it supports the <strong>Open Data Certificate</strong>, which assesses the legal,
+            practical, technical and social aspects of publishing open data against best-practice guidance. You can find out more about what you need to get an Open Data Certificate on our <a href="<%= u.whatYouNeed %>">what you need</a> page and the badge levels on our <a href="<%= u.badgeLevels %>">badge levels</a> page.
+          </p>
+          <p>
+            More about the what, how and why of certificates.theodi.org can be found on our
+            <a href="<%= u.faq %>">FAQ page</a>.
+          </p>
+        </div>
+      
+        <div class="benefits-section" id="how-to-get">
+          <h2>How to get certificates</h2>
+          <p>There are two main ways to earn a certificate:</p>
+      
+          <h3>Single datasets</h3>
+          <p>To certify an individual dataset, start the questionnaire:</p>
+          <p><a class="btn btn-primary" href="<%= u.startCert %>">Start certificate</a></p>
+      
+          <h3>Multiple datasets / portals</h3>
+          <p>
+            If you’d like to integrate certificates into a data portal or automate assessments at scale,
+            please contact us at <a href="mailto:bizdev@theodi.org">bizdev@theodi.org</a>.
+          </p>
+        </div>
+      
+        <div class="benefits-section" id="publisher-benefits">
+          <h2>Publisher benefits</h2>
+          <dl>
+            <dt>Independent mark of quality</dt>
+            <dd>Demonstrate trustworthy data management and publication with an ODI Certificate you can reference and display.</dd>
+      
+            <dt>Guidance against best practice</dt>
+            <dd>Be guided through an assessment aligned to recognised standards and practical good practice.</dd>
+      
+            <dt>Actionable improvement report</dt>
+            <dd>Receive a clear set of recommendations to progress to higher levels of assurance.</dd>
+      
+            <dt>Build trust with users and partners</dt>
+            <dd>Provide the information data users need to rely on your data within open and shared data ecosystems.</dd>
+          </dl>
+        </div>
+      
+        <div class="benefits-section" id="user-benefits">
+          <h2>Data user benefits</h2>
+          <dl>
+            <dt>Transparency and dependability</dt>
+            <dd>See how data is governed, updated and supported, including licensing and documentation commitments.</dd>
+      
+            <dt>Alignment with best practices</dt>
+            <dd>Higher certificate levels signal stronger processes that support sustainable reuse.</dd>
+      
+            <dt>Independent assessment</dt>
+            <dd>Certificates are platform-agnostic and focus on the practices that enable trusted data sharing and reuse.</dd>
+          </dl>
+        </div>
+      
+        <div class="benefits-section" id="platform-technologists">
+          <h2>Data platform technologists</h2>
+          <p>
+            ODI Certificates can be integrated with data platforms to validate metadata completeness and key publication
+            practices, helping publishers identify gaps and raise quality across portfolios.
+          </p>
+          <p>
+            <a href="<%= u.exampleCert %>">See an example certificate</a>
+          </p>
+        </div>
+      
+        <div class="benefits-section" id="related-links">
+          <h2>Related links</h2>
+          <nav>
+            <ul>
+              <li><a href="<%= u.faq %>">FAQ</a></li>
+              <li><a href="<%= u.autocert %>">Autocertification</a></li>
+            </ul>
+          </nav>
+        </div>
+      </section>
+      
+  </div>
+</div>
+
+<!-- Styles for the about page layout -->
+<style>
+  .about-layout {
+    display: grid;
+    grid-template-columns: minmax(220px, 280px) 1fr;
+    gap: 20px;
+    align-items: start;
+    margin-top: 20px;
+  }
+  .about-content {
+    padding-top: 0px !important;
+  }
+  .page-contents-navigation .toc-title { font-size: 1.05rem; margin: 0 0 .5rem 0; }
+  .page-contents-navigation ol { padding-left: 1.1rem; margin: 0; }
+  .page-contents-navigation a { text-decoration: none; }
+  .benefits-section { scroll-margin-top: 90px; } /* keep headings clear under sticky headers */
+  .benefits-section h2 { font-size: 1.25rem; margin-top: .5rem; }
+  @media (max-width: 900px) {
+    .about-layout { grid-template-columns: 1fr; }
+  }
+  dt { font-weight: bold; color: var(--color-dark-blue); }
+  dd { margin-left: 1.5rem; margin-bottom: 1rem; }
+  dd::before { content: "— "; }
+</style>
+
+<!-- Smooth scroll (optional) -->
+<script>
+  (function () {
+    // Add an invisible "top" anchor for "Back to top" links
+    if (!document.getElementById('top')) {
+      const topAnchor = document.createElement('div');
+      topAnchor.id = 'top';
+      document.body.prepend(topAnchor);
+    }
+
+    // Optional: smooth-scroll for same-page anchors
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', (e) => {
+        const id = a.getAttribute('href').slice(1);
+        const target = document.getElementById(id);
+        if (target) {
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          history.replaceState(null, '', '#' + id);
+        }
+      });
+    });
+  })();
+</script>
+<%- include('../partials/footer') %>
