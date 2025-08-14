@@ -128,6 +128,22 @@ app.get('/about/ODC/badge-levels', function(req, res) {
   res.locals.page = page;
   res.render('pages/odc/badge-levels');
 });
+app.get('/about/privacy', function(req, res) {
+  const page = {
+    title: "Privacy",
+    link: "/about/privacy"
+  };
+  res.locals.page = page;
+  res.render('pages/privacy');
+});
+app.get('/about/terms', function(req, res) {
+  const page = {
+    title: "Terms",
+    link: "/about/terms"
+  };
+  res.locals.page = page;
+  res.render('pages/terms');
+});
 
 // Connect to MongoDB for loading surveys from the database
 (async () => {
