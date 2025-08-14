@@ -1,5 +1,452 @@
 <%- include('../partials/header') %>
-<section class="content-block light-grey home-top">
-    <h1>Home</h1>
+
+<!-- Hero Section -->
+<section class="hero-section">
+  <div class="container">
+    <div class="hero-content">
+      <h1>The mark of quality and trust for data</h1>
+      <p class="hero-subtitle">We verify publisher best practice, so you can use data with confidence.</p>
+      <p class="hero-tagline">It's free and open.</p>
+      
+      <div class="hero-actions">
+        <a class="btn" href="/datasets" class="btn btn-primary btn-large">Check if you have a certificate</a>
+        <a class="btn" href="/datasets/new" class="btn btn-secondary btn-large">Create new certificate</a>
+      </div>
+    </div>
+  </div>
 </section>
+
+<!-- What happens next Section -->
+<section class="process-section">
+  <div class="container">
+    <h2>What happens next</h2>
+    <div class="process-grid">
+      <div class="process-card">
+        <div class="process-icon">🎯</div>
+        <h3>Get certified</h3>
+        <p>Create new certificate</p>
+      </div>
+      
+      <div class="process-card">
+        <div class="process-icon">🤝</div>
+        <h3>Certify all data in your organisation</h3>
+        <p>Contact us about how we can help you certify all your data.</p>
+      </div>
+      
+      <div class="process-card">
+        <div class="process-icon">📈</div>
+        <h3>Improve your data</h3>
+        <p>A free best practice report to help you achieve higher badge levels is created for all certificates.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Certificate Image Section -->
+<section class="certificate-showcase">
+  <div class="container">
+    <div class="showcase-content">
+      <div class="showcase-text">
+        <h2>What is an ODI Certificate?</h2>
+        <p>Each ODI Certificate uses a questionnaire-style assessment to recognise trustworthy data.</p>
+        <p>Each badge shows that the data is governed in a sustainable and reusable way – with each level indicating the available support and adherence to current best-practices.</p>
+        <a href="/about" class="btn btn-outline">Learn more</a>
+      </div>
+      <div class="showcase-image">
+        <img src="/images/circles.png" alt="Open Data Certificate badges showing different levels of achievement" />
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How it works Section -->
+<section class="features-section">
+  <div class="container">
+    <h2>How does each certificate work?</h2>
+    <div class="features-grid">
+      <div class="feature-item">
+        <div class="feature-icon">✅</div>
+        <p>It recognises well governed data</p>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🛡️</div>
+        <p>It provides an independent guarantee of quality</p>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🌱</div>
+        <p>It assesses sustainability and reliability of data</p>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🤝</div>
+        <p>It encourages trust and reuse of data</p>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">📋</div>
+        <p>It guides publishers through established best practices</p>
+      </div>
+    </div>
+    <div class="features-cta">
+      <a href="/about" class="btn btn-primary">Learn more</a>
+    </div>
+  </div>
+</section>
+
+<!-- Benefits Section -->
+<section class="benefits-section">
+  <div class="container">
+    <h2>Why choose ODI Certificates?</h2>
+    <div class="benefits-grid">
+      <div class="benefit-card">
+        <h3>For Publishers</h3>
+        <ul>
+          <li>Independent mark of quality</li>
+          <li>Guidance against best practice</li>
+          <li>Actionable improvement report</li>
+          <li>Build trust with users and partners</li>
+        </ul>
+      </div>
+      
+      <div class="benefit-card">
+        <h3>For Data Users</h3>
+        <ul>
+          <li>Transparency and dependability</li>
+          <li>Alignment with best practices</li>
+          <li>Independent assessment</li>
+          <li>Quality assurance</li>
+        </ul>
+      </div>
+      
+      <div class="benefit-card">
+        <h3>For Organizations</h3>
+        <ul>
+          <li>Platform-agnostic certificates</li>
+          <li>Integration with data portals</li>
+          <li>Community validation support</li>
+          <li>Scalable certification process</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-content">
+      <h2>Ready to get started?</h2>
+      <p>Join governments, public sector bodies, private companies, and NGOs worldwide who are using ODI Certificates to demonstrate quality and build trust in their data.</p>
+      <div class="cta-actions">
+        <a href="/datasets/new" class="btn btn-primary btn-large">Create your first certificate</a>
+        <a href="/about/faq" class="btn btn-outline btn-large">Learn more</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+/* Hero Section */
+.hero-section {
+  padding: 80px 0;
+  text-align: center;
+}
+
+.hero-content h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.hero-subtitle {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.9;
+}
+
+.hero-tagline {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+  font-weight: 600;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.hero-note {
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.hero-note a {
+  color: white;
+  text-decoration: underline;
+}
+
+/* Process Section */
+.process-section {
+  padding: 80px 0;
+  background: rgba(226,230,233)
+}
+
+.process-section h2 {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 3rem;
+  color: #333;
+}
+
+.process-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.process-card {
+  background: white;
+  padding: 2rem;
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.process-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.process-card h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: var(--color-dark-blue);
+}
+
+/* Certificate Showcase */
+.certificate-showcase {
+  padding: 80px 0;
+  background: white;
+}
+
+.showcase-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.showcase-image {
+    background: var(--color-dark-blue);
+}
+
+.showcase-text h2 {
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.showcase-text p {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  color: #666;
+}
+
+.showcase-image img {
+  width: 100%;
+  height: auto;
+}
+
+/* Features Section */
+.features-section {
+  padding: 80px 0;
+  background: rgba(226,230,233)
+}
+
+.features-section h2 {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 3rem;
+  color: #333;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto 3rem;
+}
+
+.feature-item {
+  background: white;
+  padding: 2rem;
+  text-align: center;
+}
+
+.feature-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.feature-item p {
+  font-size: 1.1rem;
+  color: #666;
+  line-height: 1.5;
+}
+
+.features-cta {
+  text-align: center;
+}
+
+/* Benefits Section */
+.benefits-section {
+  padding: 80px 0;
+  background: white;
+}
+
+.benefits-section h2 {
+  text-align: center;
+  font-size: 2.5rem;
+  margin-bottom: 3rem;
+  color: #333;
+}
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.benefit-card {
+  background: var(--color-dark-blue);
+  padding: 2rem;
+  border-left: 4px solid var(--color-dark-blue);
+}
+
+.benefit-card h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.benefit-card ul {
+  list-style: none;
+  padding: 0;
+}
+
+.benefit-card li {
+  padding: 0.5rem 0;
+  position: relative;
+  padding-left: 1.5rem;
+  color: white;
+}
+
+.benefit-card li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: white;
+  font-weight: bold;
+}
+
+/* CTA Section */
+.cta-section {
+  padding: 80px 0;
+  background: rgba(226,230,233);
+  color: white;
+  text-align: center;
+}
+
+.cta-content h2 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: var(--color-dark-blue);
+}
+
+.cta-content p {
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  color: black;
+}
+
+.cta-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .hero-content h1 {
+    font-size: 2rem;
+  }
+  
+  .hero-subtitle {
+    font-size: 1.2rem;
+  }
+  
+  .hero-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .showcase-content {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+  
+  .process-grid,
+  .features-grid,
+  .benefits-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .cta-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .process-section h2,
+  .features-section h2,
+  .benefits-section h2,
+  .cta-content h2 {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-section,
+  .process-section,
+  .certificate-showcase,
+  .features-section,
+  .benefits-section,
+  .cta-section {
+    padding: 60px 0;
+  }
+  
+  .hero-content h1 {
+    font-size: 1.8rem;
+  }
+  
+  .process-card,
+  .feature-item,
+  .benefit-card {
+    padding: 1.5rem;
+  }
+}
+</style>
+
 <%- include('../partials/footer') %>

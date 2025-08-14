@@ -1,0 +1,124 @@
+<%- include('../../partials/header') %>
+<%
+/**
+ * FAQ page (EJS)
+ * Usage:
+ *   res.render('pages/migration');
+ *
+ * If you want to inject/override FAQs from your route, pass:
+ *   res.render('pages/faq', { faqs: [...] })
+ */
+ const defaultFaqs = [
+  {
+    q: 'What is the new ODI Certificates platform?',
+    a: `<p>The new ODI Certificates platform is a modern, user-friendly system that allows you to create and manage your certificates more easily. It includes a new design, improved navigation, and additional features to enhance your experience.</p>`
+  },
+  { q: 'What has changed?',
+    a: `<p>There are several key changes in the platform:</p><ol><li>Datasets have certificates. So now before you can create a certificate, you need to create a dataset the certificate is about. This just requires a URL and title.</li><li>The platform now has a new login system. Old accounts have been deleted, but the certificates connected to them (if they have been migrated) are still available (see below).</li><li>The plaform has been updated so it supports mulitple certificates, not just the Open Data Certificate. This means in the future we will be able to add more certificate types.</li><li>The automatic certificate generation has been removed while we investigate if we can make use of Generate AI to help people complete the certificates.</li></ol>`
+  },
+  {
+    q: 'How do I log in to see my certificates?',
+    a: `<p>Certificates remain linked to the users who created them. However, the new ODI Certificates platform requires an <strong>ODI account</strong> to log in.</p><p>You can create an account here: <a href="https://theodi.org/account/register/" target="_blank" rel="noopener">https://theodi.org/account/register/</a></p><p><strong>Important:</strong> You must use the <em>same email address</em> that you originally used for your certificates account.</p><p>If you need to recover a certificate linked to an email you no longer have access to, please contact us at <a href="mailto:info@theodi.org">info@theodi.org</a>.</p>`
+  },
+  {
+    q: 'Why can I no longer create a certificate without logging in?',
+    a: `<p>Requiring users to log in prevents spam and reduces the number of empty or incomplete certificates being created.</p>`
+  },
+  {
+    q: 'What has happened to translations?',
+    a: `<p>As part of the migration, we have focused on English as the primary language. Certificate questionnaires that were previously translated remain available in their original languages, but supporting pages such as the FAQ and About pages have been substantially updated in English only.</p><p>If you would like to arrange a translation of the new certificates content, please contact us at <a href="mailto:bizdev@theodi.org">bizdev@theodi.org</a>.</p>`
+  }
+];
+
+
+// Use faqs passed in from route, else defaultFaqs
+let list = (typeof faqs !== 'undefined' && Array.isArray(faqs) && faqs.length > 0)
+  ? faqs
+  : defaultFaqs;
+
+// Simple slugify for IDs/anchors
+const slugify = (s) => (s || '')
+  .toString()
+  .toLowerCase()
+  .replace(/['’]/g, '')
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '');
+%>
+
+<div class="container about">
+    <h1>Certificates Update FAQ</h1>
+  <div class="span8">
+    <div class="faq-layout">
+      <!-- TOC -->
+      <nav class="page-contents-navigation" aria-label="FAQ contents">
+        <h2 class="toc-title">Contents</h2>
+        <ol>
+          <% list.forEach(function(item) { const id = slugify(item.q); %>
+            <li><a href="#<%= id %>"><%= item.q %></a></li>
+          <% }) %>
+        </ol>
+      </nav>
+
+      <!-- FAQ content -->
+      <section class="faq-content">
+        <% list.forEach(function(item) { const id = slugify(item.q); %>
+          <article id="<%= id %>" class="faq-item" aria-labelledby="<%= id %>-q">
+            <h2 id="<%= id %>-q" class="faq-question"><%= item.q %></h2>
+            <div class="faq-answer"><%- item.a %></div>
+            <p class="back-to-top"><a href="#top">Back to top</a></p>
+            <hr />
+          </article>
+        <% }) %>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- Optional minimal styles; move to your CSS file -->
+<style>
+  .faq-layout {
+    display: grid;
+    grid-template-columns: minmax(220px, 280px) 1fr;
+    gap: 20px;
+    align-items: start;
+    margin-top: 20px;
+  }
+  .faq-content {
+   padding-top: 0px !important;
+  }
+  .page-contents-navigation .toc-title { font-size: 1.05rem; margin: 0 0 .5rem 0; }
+  .page-contents-navigation ol { padding-left: 1.1rem; margin: 0; }
+  .page-contents-navigation a { text-decoration: none; }
+  .faq-item { scroll-margin-top: 90px; } /* keep headings clear under sticky headers */
+  .faq-question { font-size: 1.25rem; margin-top: .5rem; }
+  .back-to-top { margin: .5rem 0 1.25rem; }
+  @media (max-width: 900px) {
+    .faq-layout { grid-template-columns: 1fr; }
+  }
+</style>
+
+<!-- Smooth scroll (optional) -->
+<script>
+  (function () {
+    // Add an invisible "top" anchor for "Back to top" links
+    if (!document.getElementById('top')) {
+      const topAnchor = document.createElement('div');
+      topAnchor.id = 'top';
+      document.body.prepend(topAnchor);
+    }
+
+    // Optional: smooth-scroll for same-page anchors
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', (e) => {
+        const id = a.getAttribute('href').slice(1);
+        const target = document.getElementById(id);
+        if (target) {
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          history.replaceState(null, '', '#' + id);
+        }
+      });
+    });
+  })();
+</script>
+<%- include('../../partials/footer') %>

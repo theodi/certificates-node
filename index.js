@@ -10,6 +10,7 @@ import mongoose from 'mongoose';
 import surveysRouter from './routes/surveys.js';
 import datasetsRouter from './routes/datasets.js';
 import redirectsRouter from './routes/redirects.js';
+import aboutRouter from './routes/about.js';
 import session from 'express-session';
 import logger from 'morgan';
 import passport from './passport.js';
@@ -79,6 +80,7 @@ app.use(express.static(__dirname + '/public')); // Public directory
 
 // Auth routes
 app.use('/auth', authRoutes);
+app.use('/about', aboutRouter);
 app.use('/datasets', datasetsRouter);
 app.use('/surveys', surveysRouter);
 app.use('/', redirectsRouter);
@@ -94,55 +96,6 @@ app.get('/', function(req, res) {
   };
   res.locals.page = page;
   res.render('pages/home');
-});
-
-app.get('/about', function(req, res) {
-  const page = {
-    title: "About",
-    link: "/about"
-  };
-  res.locals.page = page;
-  res.render('pages/about');
-});
-app.get('/faq', function(req, res) {
-  const page = {
-    title: "FAQ",
-    link: "/faq"
-  };
-  res.locals.page = page;
-  res.render('pages/faq');
-});
-app.get('/about/ODC/what-you-need', function(req, res) {
-  const page = {
-    title: "What you need",
-    link: "/about/odc/what-you-need"
-  };
-  res.locals.page = page;
-  res.render('pages/odc/what-you-need');
-});
-app.get('/about/ODC/badge-levels', function(req, res) {
-  const page = {
-    title: "Badge Levels",
-    link: "/about/odc/badge-levels"
-  };
-  res.locals.page = page;
-  res.render('pages/odc/badge-levels');
-});
-app.get('/about/privacy', function(req, res) {
-  const page = {
-    title: "Privacy",
-    link: "/about/privacy"
-  };
-  res.locals.page = page;
-  res.render('pages/privacy');
-});
-app.get('/about/terms', function(req, res) {
-  const page = {
-    title: "Terms",
-    link: "/about/terms"
-  };
-  res.locals.page = page;
-  res.render('pages/terms');
 });
 
 // Connect to MongoDB for loading surveys from the database
@@ -177,31 +130,49 @@ app.get('*', function(req, res, next){
 app.use((err, req, res, next) => {
   console.log('in error');
   console.log(err);
+  
   // Default status code for unhandled errors
   let statusCode = 500;
   let errorMessage = "Internal Server Error";
+  
   // Check if the error has a specific status code and message
   if (err.status) {
-      statusCode = err.status;
-      errorMessage = err.message;
+    statusCode = err.status;
+    errorMessage = err.message;
   }
+  
+  // Provide more specific error messages based on status code
+  if (statusCode === 401) {
+    errorMessage = "Authentication Required";
+  } else if (statusCode === 403) {
+    errorMessage = "Access Denied";
+  } else if (statusCode === 404) {
+    errorMessage = "Page Not Found";
+  } else if (statusCode === 500) {
+    errorMessage = "Internal Server Error";
+  }
+  
   const page = {
     title: "Error"
   };
   res.locals.page = page;
 
-  // Log the error stack trace
-  //console.error(err.stack);
+  // Log the error stack trace for debugging (uncomment if needed)
+  // console.error(err.stack);
 
   // Content negotiation based on request Accept header
   const acceptHeader = req.get('Accept');
 
   if (acceptHeader === 'application/json') {
-      // Respond with JSON
-      res.status(statusCode).json({ message: errorMessage });
+    // Respond with JSON
+    res.status(statusCode).json({ 
+      error: errorMessage,
+      status: statusCode,
+      message: errorMessage 
+    });
   } else {
-      // Respond with HTML (rendering an error page)
-      res.status(statusCode).render('errors/error', { statusCode, errorMessage });
+    // Respond with HTML (rendering an error page)
+    res.status(statusCode).render('errors/error', { statusCode, errorMessage });
   }
 });
 

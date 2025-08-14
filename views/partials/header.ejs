@@ -28,32 +28,94 @@
 			<div id="overlay-content-inner" style="overflow-y: scroll; min-width: 100%;"></div>
 		</div>
 	</div>
+	
+	<!-- Mobile menu overlay -->
+	<div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+	
 	<header class="header">
 		<p class="version"><a href="<%= software.versionLink %>" target="_blank">v<%= software.version %></a></p>
 		<div class="container">
 			<div class="header-top">
-			<a href="/" class="logo"></a>
-			<nav class="main-nav" aria-label="Main Menu">
-				<ul>
-                    <li><a href="/datasets/new" class="toggle-link <% if (page.link === '/datasets/new') { %>selected<% } %>">Create new certificate</a></li>
-                    <% if(user) { %>
-                        <li><a href="/datasets/my" class="toggle-link <% if (page.link === '/datasets/my') { %>selected<% } %>">Your certificates</a></li>
-						<li><a href="/about" class="toggle-link <% if (page.link === '/about') { %>selected<% } %>">About</a></li>
-						<li><a href="/faq" class="toggle-link <% if (page.link === '/faq') { %>selected<% } %>">FAQ</a></li>
-						<li>
-							<a style="padding: 0;" class="toggle-link <% if (page.link === '/auth/profile') { %>selected<% } %>" href="/auth/profile"><%= user ? (user.displayName || (user.first_name && user.last_name ? user.first_name + ' ' + user.last_name : user.email)) : 'Guest' %></a>
-							<form style="display: inline-flex;" id="logout_form" action="/auth/logout" method="post">
-								 &nbsp;<a href="javascript:;" onclick="document.getElementById('logout_form').submit();">(Logout)</a>
-							</form>
-						</li>
-					<% } else { %>
-                        <li><a href="/datasets" class="toggle-link <% if (page.link === '/datasets') { %>selected<% } %>">Browse certificates</a></li>
-						<li><a href="/about" class="toggle-link <% if (page.link === '/about') { %>selected<% } %>">About</a></li>
-						<li><a href="/faq" class="toggle-link <% if (page.link === '/faq') { %>selected<% } %>">FAQ</a></li>
-						<li><a href="/auth/django" class="toggle-link">Login</a></li>
-					<% } %>
-				</ul>
-			</nav>
+				<h1><a href="/">ODI Certificates</a></h1>
+				
+				<!-- Hamburger menu button -->
+				<button class="hamburger" id="hamburger" aria-label="Toggle navigation menu">
+					<span></span>
+					<span></span>
+					<span></span>
+				</button>
+				
+				<nav class="main-nav" id="mainNav" aria-label="Main Menu">
+					<ul>
+						<li><a href="/datasets/new" class="toggle-link <% if (page.link === '/datasets/new') { %>selected<% } %>">Create new certificate</a></li>
+						<% if(user) { %>
+							<li><a href="/datasets/my" class="toggle-link <% if (page.link === '/datasets/my') { %>selected<% } %>">Your certificates</a></li>
+							<li><a href="/about" class="toggle-link <% if (page.link === '/about') { %>selected<% } %>">About</a></li>
+							<li><a href="/about/faq" class="toggle-link <% if (page.link === '/about/faq') { %>selected<% } %>">FAQ</a></li>
+							<li>
+								<a style="padding: 0;" class="toggle-link <% if (page.link === '/auth/profile') { %>selected<% } %>" href="/auth/profile"><%= user ? (user.displayName || (user.first_name && user.last_name ? user.first_name + ' ' + user.last_name : user.email)) : 'Guest' %></a>
+								<form style="display: inline-flex;" id="logout_form" action="/auth/logout" method="post">
+									 &nbsp;<a href="javascript:;" onclick="document.getElementById('logout_form').submit();">(Logout)</a>
+								</form>
+							</li>
+						<% } else { %>
+							<li><a href="/datasets" class="toggle-link <% if (page.link === '/datasets') { %>selected<% } %>">Browse certificates</a></li>
+							<li><a href="/about" class="toggle-link <% if (page.link === '/about') { %>selected<% } %>">About</a></li>
+							<li><a href="/about/faq" class="toggle-link <% if (page.link === '/about/faq') { %>selected<% } %>">FAQ</a></li>
+							<li><a href="/auth/django" class="toggle-link">Login</a></li>
+						<% } %>
+					</ul>
+				</nav>
 			</div>
 		</div>
 	</header>
+	
+	<script>
+		// Mobile menu functionality
+		document.addEventListener('DOMContentLoaded', function() {
+			const hamburger = document.getElementById('hamburger');
+			const mainNav = document.getElementById('mainNav');
+			const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+			
+			function toggleMenu() {
+				hamburger.classList.toggle('active');
+				mainNav.classList.toggle('active');
+				mobileMenuOverlay.classList.toggle('active');
+				document.body.style.overflow = mainNav.classList.contains('active') ? 'hidden' : '';
+			}
+			
+			function closeMenu() {
+				hamburger.classList.remove('active');
+				mainNav.classList.remove('active');
+				mobileMenuOverlay.classList.remove('active');
+				document.body.style.overflow = '';
+			}
+			
+			// Toggle menu on hamburger click
+			hamburger.addEventListener('click', toggleMenu);
+			
+			// Close menu when clicking overlay
+			mobileMenuOverlay.addEventListener('click', closeMenu);
+			
+			// Close menu when clicking a menu item
+			mainNav.addEventListener('click', function(e) {
+				if (e.target.tagName === 'A') {
+					closeMenu();
+				}
+			});
+			
+			// Close menu on escape key
+			document.addEventListener('keydown', function(e) {
+				if (e.key === 'Escape' && mainNav.classList.contains('active')) {
+					closeMenu();
+				}
+			});
+			
+			// Close menu on window resize (if screen becomes larger)
+			window.addEventListener('resize', function() {
+				if (window.innerWidth > 768 && mainNav.classList.contains('active')) {
+					closeMenu();
+				}
+			});
+		});
+	</script>

@@ -24,16 +24,20 @@
         <h2>Badge Descriptions</h2>
         <ul class="kitemarks">
           <li class="kitemark2">
-            BRONZE: The dataset meets the Bronze requirements for open data publication
+            <img src="/images/badges/raw_level_badge.png" alt="Bronze" />
+            <strong>Bronze</strong>: The dataset meets the Bronze requirements for open data publication
           </li>
           <li class="kitemark2">
-            SILVER: The dataset demonstrates good practice in open data publication
+            <img src="/images/badges/pilot_level_badge.png" alt="Silver" />
+            <strong>Silver</strong>: The dataset demonstrates good practice in open data publication
           </li>
           <li class="kitemark2">
-            GOLD: The dataset meets established standards for open data publication
+            <img src="/images/badges/standard_level_badge.png" alt="Gold" />
+            <strong>Gold</strong>: The dataset meets established standards for open data publication
           </li>
           <li class="kitemark2">
-            PLATINUM: The dataset represents best practice in open data publication
+            <img src="/images/badges/exemplar_level_badge.png" alt="Platinum" />
+            <strong>Platinum</strong>: The dataset represents best practice in open data publication
           </li>
         </ul>
       </div>
@@ -233,6 +237,23 @@
 
 <!-- Styles for the badge levels page layout -->
 <style>
+  .kitemarks {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.kitemark2 {
+  display: flex;
+  align-items: center; /* Vertically aligns text and image */
+  gap: 10px; /* Space between image and text */
+  margin-bottom: 10px;
+}
+
+.kitemark2 img {
+  height: 40px; /* Adjust as needed */
+  width: auto;
+}
   .badge-levels-layout {
     display: grid;
     grid-template-columns: minmax(220px, 280px) 1fr;

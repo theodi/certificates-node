@@ -359,10 +359,130 @@ li {
   background-color: var(--button-base);
   cursor: pointer;
   display: inline-block;
+  margin-bottom: 0.5rem;
 }
 .btn:hover, button:hover, .submitButton:hover {
   background-color: var(--color-light-grey);
   color: var(--color-dark-blue) !important;
+}
+.header h1 {
+  font-size: 2rem;
+  font-weight: normal;
+  margin: 0;
+  padding: 0;
+}
+.header h1 a:hover {
+  text-decoration: none;
+}
+.header h1 a {
+  color: white;
+  text-decoration: none;
+}
+
+/* Mobile menu styles */
+.hamburger {
+  display: none;
+  flex-direction: column;
+  cursor: pointer;
+  padding: 10px;
+  background: none;
+  border: none;
+  color: white;
+}
+
+.hamburger span {
+  width: 25px;
+  height: 3px;
+  background: white;
+  margin: 3px 0;
+  transition: 0.3s;
+  border-radius: 2px;
+}
+
+.hamburger.active span:nth-child(1) {
+  transform: rotate(-45deg) translate(-5px, 6px);
+}
+
+.hamburger.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger.active span:nth-child(3) {
+  transform: rotate(45deg) translate(-5px, -6px);
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+  .hamburger {
+    display: flex;
+  }
+  
+  .main-nav {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 80%;
+    max-width: 300px;
+    height: 100vh;
+    background: #333;
+    transition: 0.3s;
+    z-index: 1000;
+    padding-top: 60px;
+  }
+  
+  .main-nav.active {
+    right: 0;
+  }
+  
+  .main-nav ul {
+    flex-direction: column;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .main-nav li {
+    display: block;
+    margin: 0;
+    border-bottom: 1px solid #555;
+  }
+  
+  .main-nav a {
+    display: block;
+    padding: 15px 20px;
+    color: white;
+    text-decoration: none;
+    border: none;
+  }
+  
+  .main-nav a:hover {
+    background: #555;
+  }
+  
+  .main-nav a.selected {
+    background: #007cba;
+  }
+  
+  /* Overlay for mobile menu */
+  .mobile-menu-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
+  
+  .mobile-menu-overlay.active {
+    display: block;
+  }
 }
 strong {
   color: inherit;

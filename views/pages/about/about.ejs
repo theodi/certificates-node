@@ -1,4 +1,4 @@
-<%- include('../partials/header') %>
+<%- include('../../partials/header') %>
 <%
 // Optional: allow routes to be injected from the server.
 // In your route handler you can do: res.render('pages/about', { urls: { badgeLevels: '/badge-levels', ... } })
@@ -17,7 +17,7 @@ const u = {
 %>
 
 <div class="container about">
-  <h1>About Open Data Certificate</h1>
+  <h1>About ODI Certificates</h1>
   <div class="about-layout">
     <!-- TOC -->
     <nav class="page-contents-navigation" aria-label="About page contents">
@@ -172,4 +172,4 @@ const u = {
     });
   })();
 </script>
-<%- include('../partials/footer') %>
+<%- include('../../partials/footer') %>

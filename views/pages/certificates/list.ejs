@@ -12,13 +12,12 @@
   <table id="certsTable" class="display" style="width:100%">
     <thead>
       <tr>
-        <th>State</th>
-        <th>Level</th>
-        <th>Certificate</th>
-        <th>Locale</th>
-        <th>Created</th>
-        <th>Updated</th>
-        <th>Actions</th>
+        <th width="10%">State</th>
+        <th width="10%">Level</th>
+        <th width="20%">Certificate</th>
+        <th width="10%">Created</th>
+        <th width="10%">Updated</th>
+        <th width="40%">Actions</th>
       </tr>
     </thead>
     <tbody></tbody>
@@ -42,7 +41,6 @@
         { data: 'state' },
         { data: 'level' },
         { data: 'surveyTitle' },
-        { data: 'surveyLocaleText' },
         { data: 'createdAt', render: (d) => d ? new Date(d).toLocaleString() : '' },
         { data: 'updatedAt', render: (d) => d ? new Date(d).toLocaleString() : '' },
                  { data: null, render: (row) => {
