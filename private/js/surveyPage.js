@@ -39,7 +39,6 @@ import { calculateProgress, navigateToQuestion } from './progressTracker.js';
     initializeProgress(schemaQuestions);
 
     const initialData = extractInitialData(rs);
-
     // initial progress render
     calculateProgress(
       filterVisibleSchemaQuestions(schemaQuestions),
@@ -49,7 +48,9 @@ import { calculateProgress, navigateToQuestion } from './progressTracker.js';
       survey
     );
 
-    buildSidebar(schema);
+    // Create the survey header outside of SurveyJS
+    createSurveyHeader(schema);
+    buildSectionsNav(schema);
     setupAutoSave(schemaQuestions, datasetId, responseSetId);
     setupSurveyRendering(schemaQuestions, schema, initialData);
 
@@ -107,15 +108,15 @@ import { calculateProgress, navigateToQuestion } from './progressTracker.js';
     );
   }
 
-  function buildSidebar(schema) {
-    const sidebar = document.getElementById('sidebar');
+  function buildSectionsNav(schema) {
+    const sectionsNav = document.getElementById('sections-nav');
     schema.pages.forEach((page, index) => {
       const pageLink = document.createElement('button');
       pageLink.textContent = page.title?.default || page.title || `Page ${index + 1}`;
       pageLink.style.display = 'block';
       pageLink.style.marginBottom = '10px';
       pageLink.onclick = () => { survey.currentPageNo = index; };
-      sidebar.appendChild(pageLink);
+      sectionsNav.appendChild(pageLink);
     });
   }
 
@@ -209,14 +210,65 @@ import { calculateProgress, navigateToQuestion } from './progressTracker.js';
     return '';
   }
 
+  // Key used to remember open/closed state per survey + locale
+    function descStateKey(survey) {
+    return `surveyDescOpen:${survey?.id || 'unknown'}:${survey?.locale || 'en'}`;
+  }
+
+  function createSurveyHeader(schema) {
+    // Find or create the survey header container
+    let headerContainer = document.getElementById('survey-header');
+    if (!headerContainer) {
+      headerContainer = document.createElement('div');
+      headerContainer.id = 'survey-header';
+      headerContainer.className = 'survey-header';
+      
+      // Insert it before the survey container
+      const surveyContainer = document.querySelector('.survey-container');
+      if (surveyContainer) {
+        surveyContainer.parentNode.insertBefore(headerContainer, surveyContainer);
+      }
+    }
+    
+    const titleHtml = localized(schema.title, selectedLanguage);
+    const descHtml = localized(schema.description, selectedLanguage);
+    
+    // Create title
+    const titleEl = document.createElement('h1');
+    titleEl.className = 'survey-title';
+    if (titleHtml && window.DOMPurify && /[<>]/.test(titleHtml)) {
+      titleEl.innerHTML = DOMPurify.sanitize(titleHtml);
+    } else {
+      titleEl.textContent = titleHtml || 'Survey';
+    }
+    
+    // Create description (inline)
+    const descContainer = document.createElement('div');
+    descContainer.className = 'survey-description-container';
+    
+    if (descHtml && window.DOMPurify) {
+      const descriptionEl = document.createElement('div');
+      descriptionEl.className = 'survey-description';
+      descriptionEl.innerHTML = DOMPurify.sanitize(descHtml);
+      descContainer.appendChild(descriptionEl);
+    }
+    
+    // Clear and populate the header container
+    headerContainer.innerHTML = '';
+    headerContainer.appendChild(titleEl);
+    if (descContainer.children.length > 0) {
+      headerContainer.appendChild(descContainer);
+    }
+  }
+
   function applySurveyHeaderHtml(htmlElement, survey) {
+    // Hide the default SurveyJS title and description since we're handling them separately
     if (!htmlElement) return;
     const titleEl = htmlElement.querySelector('.sd-title.sd-element__title, .sd-title, [data-testid="survey-title"]');
     const descEl = htmlElement.querySelector('.sd-description.sd-element__description, .sd-description, [data-testid="survey-description"]');
-    const titleHtml = localized(survey.title, survey.locale);
-    const descHtml = localized(survey.description, survey.locale);
-    if (titleEl && titleHtml && window.DOMPurify && /[<>]/.test(titleHtml)) titleEl.innerHTML = DOMPurify.sanitize(titleHtml);
-    if (descEl && descHtml && window.DOMPurify) descEl.innerHTML = DOMPurify.sanitize(descHtml);
+    
+    if (titleEl) titleEl.style.display = 'none';
+    if (descEl) descEl.style.display = 'none';
   }
 
   function applyPageHtml(page, htmlElement, survey) {

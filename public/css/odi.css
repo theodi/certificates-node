@@ -356,6 +356,7 @@ li {
   color: white !important;
   background-color: var(--button-base);
   cursor: pointer;
+  display: inline-block;
 }
 .btn:hover, button:hover, .submitButton:hover {
   background-color: var(--color-light-grey);

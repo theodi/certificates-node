@@ -176,7 +176,7 @@ export async function createDraftResponseSet(req, res, next) {
       accessCode: generateAccessCode(14)
     });
 
-    return res.redirect(`/datasets/${rs._id}/edit`);
+    return res.redirect(`/datasets/${dataset._id}/certificates/${rs._id}/edit`);
   } catch (err) {
     console.error('Error creating draft response set:', err);
     const error = new Error('Failed to create draft certificate');
@@ -209,6 +209,81 @@ export async function renderEditResponseSetPage(req, res, next) {
   } catch (err) {
     console.error('Error rendering edit page:', err);
     const error = new Error('Failed to open editor');
+    error.status = 500;
+    return next(error);
+  }
+}
+
+export async function deleteDataset(req, res, next) {
+  try {
+    const user = await getCurrentUser(req);
+    if (!user) {
+      const error = new Error('Authentication required');
+      error.status = 401;
+      return next(error);
+    }
+
+    const { datasetId } = req.params;
+    const dataset = await Dataset.findById(datasetId);
+    
+    if (!dataset) {
+      const error = new Error('Dataset not found');
+      error.status = 404;
+      return next(error);
+    }
+
+    // Check if user is owner or manager of the dataset
+    const isOwner = String(dataset.userId) === String(user._id);
+    const isManager = dataset.managerUserIds && dataset.managerUserIds.some(id => String(id) === String(user._id));
+    
+    if (!(user.admin || isOwner || isManager)) {
+      const error = new Error('Forbidden');
+      error.status = 403;
+      return next(error);
+    }
+
+    // Count certificates for this dataset
+    const certificateCount = await ResponseSet.countDocuments({ datasetId: dataset._id });
+    
+    // Count other users connected to this dataset
+    const otherUsers = dataset.managerUserIds ? 
+      dataset.managerUserIds.filter(id => String(id) !== String(user._id)) : [];
+    
+    // Count certificates by other users
+    const otherUserCertificates = await ResponseSet.countDocuments({
+      datasetId: dataset._id,
+      userId: { $in: otherUsers }
+    });
+
+    // Check if user has any certificates for this dataset
+    const userCertificates = await ResponseSet.countDocuments({
+      datasetId: dataset._id,
+      userId: user._id
+    });
+
+    if (userCertificates > 0) {
+      const error = new Error('Cannot delete dataset: you have certificates for this dataset');
+      error.status = 400;
+      return next(error);
+    }
+
+    if (certificateCount === 0 && otherUsers.length === 0) {
+      // No certificates and no other users - safe to delete the dataset
+      await Dataset.findByIdAndDelete(dataset._id);
+      return res.json({ success: true, message: 'Dataset deleted successfully' });
+    } else if (otherUsers.length > 0) {
+      // Other users exist - remove this user from the dataset
+      dataset.managerUserIds = dataset.managerUserIds.filter(id => String(id) !== String(user._id));
+      await dataset.save();
+      return res.json({ success: true, message: 'Removed from dataset successfully' });
+    } else {
+      const error = new Error('Cannot delete dataset: it has certificates');
+      error.status = 400;
+      return next(error);
+    }
+  } catch (err) {
+    console.error('Error deleting dataset:', err);
+    const error = new Error('Failed to delete dataset');
     error.status = 500;
     return next(error);
   }

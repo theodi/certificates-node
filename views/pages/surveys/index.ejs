@@ -36,7 +36,7 @@
         version: it.version,
         status: it.status,
         createdAt: it.createdAt,
-        actions: `<a href="/surveys/${it.id}/criteria">View criteria</a>`
+        actions: `<a class="button btn" href="/surveys/${it.id}/criteria">View criteria</a>`
       }));
       new DataTable(`#${tableId}`, {
         data: rows,

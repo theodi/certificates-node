@@ -1,12 +1,14 @@
 <%- include('../../partials/header') %>
 <section class="content-block white">
   <h1>Certificates for Dataset</h1>
-  <p>
-    <a href="/datasets">← Back to Datasets</a>
-  </p>
-  <p style="margin-bottom: 12px;">
-    <a class="button" href="/datasets/<%= datasetId %>/certificates/new">Create new certificate</a>
-  </p>
+     <p>
+     <a class="button btn" href="<%= user ? '/datasets/my' : '/datasets' %>">← Back to Datasets</a>
+   </p>
+   <% if (user) { %>
+   <p style="margin-bottom: 12px; margin-left: auto; margin-right: auto; text-align: center;">
+     <a class="button btn" href="/datasets/<%= datasetId %>/certificates/new">Create new certificate</a>
+   </p>
+   <% } %>
   <table id="certsTable" class="display" style="width:100%">
     <thead>
       <tr>
@@ -24,9 +26,10 @@
 <link rel="stylesheet" href="/lib/DataTables/datatables.css" />
 <script src="/lib/DataTables/datatables.min.js"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const datasetId = '<%= datasetId %>';
-    const table = new DataTable('#certsTable', {
+     let table; // Declare table variable in wider scope
+   document.addEventListener('DOMContentLoaded', function() {
+     const datasetId = '<%= datasetId %>';
+     table = new DataTable('#certsTable', {
       ajax: { url: `/datasets/${datasetId}`, headers: { 'Accept': 'application/json' } },
       processing: true,
       serverSide: false,
@@ -38,18 +41,77 @@
         { data: 'levelLabel' },
         { data: 'createdAt', render: (d) => d ? new Date(d).toLocaleString() : '' },
         { data: 'updatedAt', render: (d) => d ? new Date(d).toLocaleString() : '' },
-        { data: null, render: (row) => {
-            const viewLink = `<a href="${row.viewUrl}" target="_blank" rel="noopener">View</a>`;
-            if (row.state === 'draft') {
-              const editLink = `<a href="${row.editUrl}">Edit</a>`;
-              return `${viewLink} | ${editLink}`;
-            }
-            return viewLink;
-          }
-        }
+                 { data: null, render: (row) => {
+             const viewLink = `<a class="button btn" href="${row.viewUrl}" target="_blank" rel="noopener">View</a>`;
+             const isLoggedIn = <%- JSON.stringify(!!user) %>;
+             
+             if (isLoggedIn) {
+               const deleteLink = `<button class="button btn btn-danger" onclick="deleteCertificate('${datasetId}','${row.id}', '${row.level}')">Delete</button>`;
+               let actions = `${viewLink} ${deleteLink}`;
+               
+               if (row.state === 'draft') {
+                 const editLink = `<a class="button btn" href="${row.editUrl}">Edit</a>`;
+                 actions = `${viewLink} ${editLink} ${deleteLink}`;
+               }
+               return actions;
+             }
+             return viewLink;
+           }
+         }
       ]
     });
   });
+
+  // Delete certificate function
+  async function deleteCertificate(datasetId, certificateId, certificateLevel) {
+    if (!confirm(`Are you sure you want to delete this certificate? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/datasets/${datasetId}/certificates/${certificateId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert(result.message);
+        // Reload the table
+        table.ajax.reload();
+      } else {
+        // Handle different HTTP error codes
+        let errorMessage = 'Failed to delete certificate';
+        
+        switch (response.status) {
+          case 400:
+            errorMessage = 'Cannot delete certificate: invalid request';
+            break;
+          case 401:
+            errorMessage = 'Authentication required. Please log in again.';
+            break;
+          case 403:
+            errorMessage = 'You do not have permission to delete this certificate';
+            break;
+          case 404:
+            errorMessage = 'Certificate not found';
+            break;
+          case 500:
+            errorMessage = 'Server error occurred while deleting the certificate';
+            break;
+          default:
+            errorMessage = `Failed to delete certificate (HTTP ${response.status})`;
+        }
+        
+        alert(`Error: ${errorMessage}`);
+      }
+    } catch (error) {
+      console.error('Error deleting certificate:', error);
+      alert('An error occurred while deleting the certificate');
+    }
+  }
   </script>
 <%- include('../../partials/footer') %>
 

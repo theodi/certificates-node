@@ -5,10 +5,15 @@
           (function(){
             var isMyPath = window.location.pathname.indexOf('/datasets/my') === 0;
             var loggedIn = <%- JSON.stringify(!!user) %>;
-            document.currentScript.parentElement.textContent = (loggedIn || isMyPath) ? 'My Datasets' : 'Datasets';
+            document.currentScript.parentElement.textContent = (loggedIn || isMyPath) ? 'My Certified Datasets' : 'Certified Datasets';
           })();
         </script>
       </h1>
+      <% if (user) { %>
+      <p style="margin-bottom: 12px; margin-left: auto; margin-right: auto; text-align: center;">
+        <a class="button btn" href="/datasets/new">Certify a new dataset</a>
+      </p>
+      <% } %>
   <table id="responsesTable" class="display" style="width:100%">
     <thead>
       <tr>
@@ -21,16 +26,15 @@
     </thead>
     <tbody></tbody>
   </table>
-  <p>
-    <a class="button" href="/datasets/new">+ Add new dataset</a>
-  </p>
+  
 </section>
 
 <link rel="stylesheet" href="/lib/DataTables/datatables.css" />
 <script src="/lib/DataTables/datatables.min.js"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const table = new DataTable('#responsesTable', {
+     let table; // Declare table variable in wider scope
+   document.addEventListener('DOMContentLoaded', function() {
+     table = new DataTable('#responsesTable', {
       ajax: (function(){
         var loggedIn = <%- JSON.stringify(!!user) %>;
         var isMyPath = window.location.pathname.indexOf('/datasets/my') === 0;
@@ -52,10 +56,72 @@
         { data: 'myCount' },
         { data: 'levelLabel' },
         { data: 'updatedAt', render: (d) => d ? new Date(d).toLocaleString() : '' },
-        { data: 'actions', render: (d) => `<a href="${d}">View certificates</a>` }
+                 { data: 'actions', render: (d, t, row) => {
+             const viewLink = `<a class="button btn" href="${d}">View certificates</a>`;
+             const isLoggedIn = <%- JSON.stringify(!!user) %>;
+             const isMyPath = window.location.pathname.indexOf('/datasets/my') === 0;
+             
+             if (isLoggedIn && isMyPath) {
+               const deleteLink = `<button class="button btn btn-danger" onclick="deleteDataset('${row.id}', '${row.dataTitle}')">Delete</button>`;
+               return `${viewLink} ${deleteLink}`;
+             }
+             return viewLink;
+           }
+         }
       ]
     });
   });
+
+  // Delete dataset function
+  async function deleteDataset(datasetId, datasetTitle) {
+    if (!confirm(`Are you sure you want to delete "${datasetTitle}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/datasets/${datasetId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert(result.message);
+        // Reload the table
+        table.ajax.reload();
+      } else {
+        // Handle different HTTP error codes
+        let errorMessage = 'Failed to delete dataset';
+        
+        switch (response.status) {
+          case 400:
+            errorMessage = 'Cannot delete dataset: it has certificates or other restrictions apply';
+            break;
+          case 401:
+            errorMessage = 'Authentication required. Please log in again.';
+            break;
+          case 403:
+            errorMessage = 'You do not have permission to delete this dataset';
+            break;
+          case 404:
+            errorMessage = 'Dataset not found';
+            break;
+          case 500:
+            errorMessage = 'Server error occurred while deleting the dataset';
+            break;
+          default:
+            errorMessage = `Failed to delete dataset (HTTP ${response.status})`;
+        }
+        
+        alert(`Error: ${errorMessage}`);
+      }
+    } catch (error) {
+      console.error('Error deleting dataset:', error);
+      alert('An error occurred while deleting the dataset');
+    }
+  }
 </script>
 <%- include('../../partials/footer') %>
 

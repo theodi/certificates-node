@@ -1,3 +1,4 @@
+ 
 .longText input {
     min-width: 80%;
 }
@@ -7,22 +8,32 @@
 .padded {
     padding: 2em;
 }
-.sidebar {
-    float: left;
-    width: 20%;
-    padding: 10px;
+/* Container to center the layout */
+.survey-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 20px;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 20px;
+    flex-wrap: nowrap;
 }
+
 .survey-element {
-    float: left;
-    width: 50%;
+    flex: 0 1 auto;
+    width: 900px;
+    min-width: 600px;
+    max-width: 1200px;
     padding: 10px;
 }
+
 .certification-progress {
-    float: right;
+    flex: 0 0 auto;
+    width: 360px;
     padding: 20px;
     border: 1px solid #ccc;
     background-color: #fff;
-    width: 280px;
 }
 .level-progress {
     margin-bottom: 20px;
@@ -66,3 +77,64 @@
     }
   }
   
+/* Make survey questions wider */
+.sd-body.sd-body--static {
+    max-width: none !important;
+    width: 100% !important;
+}
+
+/* Ensure survey elements use full available width */
+#surveyElement .sd-root-modern,
+#surveyElement .sd-container-modern,
+#surveyElement .sd-page,
+#surveyElement .sd-question,
+#surveyElement .sd-question__content {
+    max-width: none !important;
+    width: 100% !important;
+}
+
+/* Make input fields wider */
+#surveyElement input[type="text"],
+#surveyElement input[type="email"],
+#surveyElement input[type="number"],
+#surveyElement textarea,
+#surveyElement select {
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box;
+}
+
+/* Survey header that spans full width */
+.survey-header {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.survey-title {
+    margin: 0 0 15px 0;
+    color: var(--color-dark-blue);
+    font-weight: bold;
+}
+
+.survey-description-container {
+    margin-top: 15px;
+}
+
+/* Delete button styles */
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+    color: white;
+}
+
+.btn-danger:focus {
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}

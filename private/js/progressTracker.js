@@ -107,6 +107,36 @@ export function calculateProgress(schemaQuestions, data, certProgress, selectedL
     if (!container) return;
     container.innerHTML = '';
   
+    // Get level names from survey
+    const getLevelName = (level) => {
+      console.log(survey);
+      if (!survey || !survey.jsonObj) return `Level ${level}`;
+      
+      const surveyData = survey.jsonObj;
+      let levelName = `Level ${level}`;
+      
+      // Try to get from survey.levels map
+      if (surveyData.levels) {
+        const levelsMap = surveyData.levels instanceof Map ? Object.fromEntries(surveyData.levels) : surveyData.levels;
+        const levelInfo = levelsMap[String(level)];
+        if (levelInfo && levelInfo.title) {
+          levelName = levelInfo.title;
+        }
+      }
+      
+      // Fallback to requirementLevels array
+      if (levelName === `Level ${level}` && Array.isArray(surveyData.requirementLevels)) {
+        const levelIndex = Number(level);
+        if (surveyData.requirementLevels[levelIndex]) {
+          levelName = surveyData.requirementLevels[levelIndex];
+          // Capitalize first letter
+          levelName = levelName.charAt(0).toUpperCase() + levelName.slice(1);
+        }
+      }
+      
+      return levelName;
+    };
+  
     Object.keys(certProgress.levels)
       .filter(lvl => Number(lvl) > 0)
       .forEach(level => {
@@ -114,6 +144,7 @@ export function calculateProgress(schemaQuestions, data, certProgress, selectedL
         const uniqueUnmet = deduplicateUnmet(unmet);
         const total = progress + uniqueUnmet.length;
         const pct = total > 0 ? (progress / total) * 100 : 0;
+        const levelName = getLevelName(level);
   
         const unmetHtml = uniqueUnmet.length
           ? `<details><summary>${uniqueUnmet.length} unmet requirements</summary>
@@ -125,7 +156,7 @@ export function calculateProgress(schemaQuestions, data, certProgress, selectedL
   
         container.insertAdjacentHTML('beforeend', `
           <div class="level-progress">
-            <h4>Level ${level}</h4>
+            <h4>Level ${level} - ${levelName}</h4>
             <div class="progress-bar"><div style="width:${pct}%"></div></div>
             <p>${progress} out of ${total} requirements met (${Math.round(pct)}%)</p>
             ${unmetHtml}

@@ -310,4 +310,42 @@ export async function listDatasetCertificates(req, res, next) {
   }
 }
 
+export async function deleteCertificate(req, res, next) {
+  try {
+    const user = await getCurrentUser(req);
+    if (!user) {
+      const error = new Error('Authentication required');
+      error.status = 401;
+      return next(error);
+    }
+
+    const { responseSetId } = req.params;
+    const responseSet = await ResponseSet.findById(responseSetId);
+    
+    if (!responseSet) {
+      const error = new Error('Certificate not found');
+      error.status = 404;
+      return next(error);
+    }
+
+    // Only the owner or admin can delete a certificate
+    const isOwner = String(responseSet.userId) === String(user._id);
+    if (!(user.admin || isOwner)) {
+      const error = new Error('Forbidden');
+      error.status = 403;
+      return next(error);
+    }
+
+    // Delete the response set (which effectively deletes the certificate)
+    await ResponseSet.findByIdAndDelete(responseSet._id);
+    
+    return res.json({ success: true, message: 'Certificate deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting certificate:', err);
+    const error = new Error('Failed to delete certificate');
+    error.status = 500;
+    return next(error);
+  }
+}
+
 

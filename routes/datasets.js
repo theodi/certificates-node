@@ -1,8 +1,8 @@
 import express from 'express';
 import { ensureAuthenticated } from '../middleware/auth.js';
 import { listResponseSetsPage, listResponseSetsData, listDatasetCertificatesPage, listDatasetCertificatesData, listPublicDatasetsPage, listPublicDatasetsData } from '../controllers/responseSets.js';
-import { renderCertificate, listDatasetCertificates } from '../controllers/certificates.js';
-import { newDatasetPage, createOrSelectDataset, chooseSurveyPage, chooseSurveyData, createDraftResponseSet, renderEditResponseSetPage } from '../controllers/datasets.js';
+import { renderCertificate, listDatasetCertificates, deleteCertificate } from '../controllers/certificates.js';
+import { newDatasetPage, createOrSelectDataset, chooseSurveyPage, chooseSurveyData, createDraftResponseSet, renderEditResponseSetPage, deleteDataset } from '../controllers/datasets.js';
 import { getResponseSetJson, saveResponsesPatch, publishDraft } from '../controllers/responseApi.js';
 
 const router = express.Router();
@@ -52,6 +52,10 @@ router.get('/:id', (req, res, next) =>
 
 // Certificates (public/published, or owner when logged in)
 router.get('/:datasetId/certificates', listDatasetCertificates);
+
+// Delete routes
+router.delete('/:datasetId', ensureAuthenticated, deleteDataset);
+router.delete('/:datasetId/certificates/:responseSetId', ensureAuthenticated, deleteCertificate);
 
 export default router;
 
