@@ -22,7 +22,7 @@ const certificateSchema = new mongoose.Schema({
     required: true
   },
   attainedLevel: {
-    type: Number, // 0=none, 1=basic, 2=pilot, 3=standard, 4=exemplar
+    type: Number, 
     default: 0,
     min: 0,
     max: 4
@@ -98,18 +98,8 @@ certificateSchema.methods.daysToExpiry = function() {
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 };
 
-certificateSchema.methods.getLevelName = function() {
-  const levelNames = ['none', 'basic', 'pilot', 'standard', 'exemplar'];
-  return levelNames[this.attainedLevel] || 'none';
-};
-
 certificateSchema.methods.setLevel = function(level) {
-  if (typeof level === 'string') {
-    const levelNames = ['none', 'basic', 'pilot', 'standard', 'exemplar'];
-    this.attainedLevel = levelNames.indexOf(level);
-  } else {
-    this.attainedLevel = Math.max(0, Math.min(4, level));
-  }
+  this.attainedLevel = Math.max(0, Math.min(4, level));
   return this;
 };
 
@@ -127,6 +117,20 @@ certificateSchema.methods.unpublish = function() {
   return this;
 };
 
+certificateSchema.methods.getLevelName = async function() {
+  // Fetch the survey to get proper level names
+  const ResponseSet = mongoose.model('ResponseSet');
+  const Survey = mongoose.model('Survey');
+  
+  const responseSet = await ResponseSet.findById(this.responseSetId).select('surveyId').lean();
+  if (!responseSet) {
+    return getLevelName(null, this.attainedLevel); // Fallback
+  }
+  
+  const survey = await Survey.findById(responseSet.surveyId).select('levels').lean();
+  return getLevelName(survey, this.attainedLevel);
+};
+
 // Static methods
 certificateSchema.statics.findPublished = function() {
   return this.find({ published: true });
@@ -134,8 +138,10 @@ certificateSchema.statics.findPublished = function() {
 
 certificateSchema.statics.findByLevel = function(level) {
   if (typeof level === 'string') {
-    const levelNames = ['none', 'basic', 'pilot', 'standard', 'exemplar'];
-    level = levelNames.indexOf(level);
+    // This would need the survey to properly map string to index
+    // For now, using a simple fallback mapping
+    const fallbackNames = ['none', 'basic', 'pilot', 'standard', 'exemplar'];
+    level = fallbackNames.indexOf(level.toLowerCase());
   }
   return this.find({ attainedLevel: level });
 };

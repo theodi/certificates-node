@@ -14,6 +14,8 @@
       <tr>
         <th>State</th>
         <th>Level</th>
+        <th>Certificate</th>
+        <th>Locale</th>
         <th>Created</th>
         <th>Updated</th>
         <th>Actions</th>
@@ -30,19 +32,21 @@
    document.addEventListener('DOMContentLoaded', function() {
      const datasetId = '<%= datasetId %>';
      table = new DataTable('#certsTable', {
-      ajax: { url: `/datasets/${datasetId}`, headers: { 'Accept': 'application/json' } },
+      ajax: { url: `/datasets/${datasetId}/certificates`, headers: { 'Accept': 'application/json' } },
       processing: true,
       serverSide: false,
       searching: true,
       ordering: true,
       responsive: true,
       columns: [
-        { data: 'stateLabel' },
-        { data: 'levelLabel' },
+        { data: 'state' },
+        { data: 'level' },
+        { data: 'surveyTitle' },
+        { data: 'surveyLocaleText' },
         { data: 'createdAt', render: (d) => d ? new Date(d).toLocaleString() : '' },
         { data: 'updatedAt', render: (d) => d ? new Date(d).toLocaleString() : '' },
                  { data: null, render: (row) => {
-             const viewLink = `<a class="button btn" href="${row.viewUrl}" target="_blank" rel="noopener">View</a>`;
+             const viewLink = `<a class="button btn" href="/datasets/${datasetId}/certificates/${row.id}" target="_blank" rel="noopener">View</a>`;
              const isLoggedIn = <%- JSON.stringify(!!user) %>;
              
              if (isLoggedIn) {
@@ -50,7 +54,7 @@
                let actions = `${viewLink} ${deleteLink}`;
                
                if (row.state === 'draft') {
-                 const editLink = `<a class="button btn" href="${row.editUrl}">Edit</a>`;
+                 const editLink = `<a class="button btn" href="/datasets/${datasetId}/certificates/${row.id}/edit">Edit</a>`;
                  actions = `${viewLink} ${editLink} ${deleteLink}`;
                }
                return actions;
@@ -114,5 +118,3 @@
   }
   </script>
 <%- include('../../partials/footer') %>
-
-

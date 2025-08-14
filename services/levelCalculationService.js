@@ -1,4 +1,5 @@
 import Survey from '../models/Survey.js';
+import { getLevelNames, getLevelName } from '../utils/levels.js';
 
 class LevelCalculationService {
   static surveyCache = new Map();
@@ -187,41 +188,86 @@ class LevelCalculationService {
     // To achieve level L, all requirements with level <= L must be satisfied
     const levelRequirements = requirements.filter(r => r.level <= level);
     const failures = [];
-    for (const requirement of levelRequirements) {
-      const { questionId, expectedValue, condition, source, elementType, minChoiceLevel, choiceRequiredValues } = requirement;
-      // Check applicability first (visibility/condition). If not applicable, skip.
-      if (condition && !this.evaluateCondition(responseSet, condition)) {
-        if (this.DEBUG) console.debug('[LevelCalc] skip requirement q=%s due to condition=%o', questionId, condition);
-        continue;
+    
+    // Group requirements by question to handle choice requirements properly
+    const requirementsByQuestion = new Map();
+    for (const req of levelRequirements) {
+      if (!requirementsByQuestion.has(req.questionId)) {
+        requirementsByQuestion.set(req.questionId, []);
       }
-      // Now requirement applies; verify presence/value
-      if (!this.hasResponse(responseSet, questionId)) {
-        failures.push({ questionId, reason: 'missing', expected: expectedValue, actual: undefined, condition });
-        continue;
-      }
+      requirementsByQuestion.get(req.questionId).push(req);
+    }
+    
+    for (const [questionId, questionRequirements] of requirementsByQuestion) {
       const actual = this.getResponseValue(responseSet, questionId);
-      // Special rule: for single-choice question with some choices having requirements, if the selected
-      // choice has no requirement, then you cannot satisfy levels at or above the minimum choice level.
-      if (elementType === 'radiogroup' && source === 'element' && Array.isArray(choiceRequiredValues) && choiceRequiredValues.length) {
-        const selected = actual;
-        const selectedHasReq = choiceRequiredValues.includes(selected);
-        if (!selectedHasReq) {
-          // Block this element-level requirement by marking as mismatch
-          failures.push({ questionId, reason: 'choice_without_requirement', expected: `one of ${JSON.stringify(choiceRequiredValues)}`, actual: selected, condition });
-          continue;
+      
+      // Check if this question has choice requirements
+      const choiceRequirements = questionRequirements.filter(r => r.source === 'choice');
+      const elementRequirements = questionRequirements.filter(r => r.source === 'element');
+      
+      if (choiceRequirements.length > 0) {
+        // For questions with choice requirements, only check the choice that matches the actual answer
+        const matchingChoiceReq = choiceRequirements.find(r => r.expectedValue === actual);
+        
+        if (matchingChoiceReq) {
+          // Check the matching choice requirement
+          const { expectedValue, condition, level: reqLevel } = matchingChoiceReq;
+          
+          // Check applicability first (visibility/condition). If not applicable, skip.
+          if (condition && !this.evaluateCondition(responseSet, condition)) {
+            if (this.DEBUG) console.debug('[LevelCalc] skip choice requirement q=%s due to condition=%o', questionId, condition);
+            continue;
+          }
+          
+          // Special rule: if this choice requirement has level 0, it blocks all levels
+          if (reqLevel === 0) {
+            failures.push({ questionId, reason: 'blocking_choice', expected: expectedValue, actual, condition });
+            continue;
+          }
+          
+          // Choice requirement is satisfied (we found a matching choice)
+          if (this.DEBUG) console.debug('[LevelCalc] choice requirement satisfied q=%s choice=%s level=%d', questionId, actual, reqLevel);
+        } else {
+          // No matching choice requirement found - this might be a problem
+          if (this.DEBUG) console.debug('[LevelCalc] no matching choice requirement for q=%s answer=%s', questionId, actual);
         }
       }
-      // Check expected or non-empty
-      let ok;
-      if (typeof expectedValue !== 'undefined') {
-        // Allow for multi-select (checkbox) answers where actual is array
-        if (Array.isArray(actual)) ok = actual.includes(expectedValue);
-        else ok = (actual === expectedValue);
-      } else {
-        ok = (actual !== null && typeof actual !== 'undefined' && String(actual).length > 0);
+      
+      // Check element-level requirements (from requirements array)
+      for (const requirement of elementRequirements) {
+        const { expectedValue, condition, elementType, minChoiceLevel, choiceRequiredValues } = requirement;
+        
+        // Check applicability first (visibility/condition). If not applicable, skip.
+        if (condition && !this.evaluateCondition(responseSet, condition)) {
+          if (this.DEBUG) console.debug('[LevelCalc] skip element requirement q=%s due to condition=%o', questionId, condition);
+          continue;
+        }
+        
+        // Special rule: for single-choice question with some choices having requirements, if the selected
+        // choice has no requirement, then you cannot satisfy levels at or above the minimum choice level.
+        if (elementType === 'radiogroup' && Array.isArray(choiceRequiredValues) && choiceRequiredValues.length) {
+          const selected = actual;
+          const selectedHasReq = choiceRequiredValues.includes(selected);
+          if (!selectedHasReq) {
+            // Block this element-level requirement by marking as mismatch
+            failures.push({ questionId, reason: 'choice_without_requirement', expected: `one of ${JSON.stringify(choiceRequiredValues)}`, actual: selected, condition });
+            continue;
+          }
+        }
+        
+        // Check expected or non-empty
+        let ok;
+        if (typeof expectedValue !== 'undefined') {
+          // Allow for multi-select (checkbox) answers where actual is array
+          if (Array.isArray(actual)) ok = actual.includes(expectedValue);
+          else ok = (actual === expectedValue);
+        } else {
+          ok = (actual !== null && typeof actual !== 'undefined' && String(actual).length > 0);
+        }
+        if (!ok) failures.push({ questionId, reason: 'mismatch', expected: expectedValue, actual, condition });
       }
-      if (!ok) failures.push({ questionId, reason: 'mismatch', expected: expectedValue, actual, condition });
     }
+    
     if (this.DEBUG && failures.length) {
       console.debug('[LevelCalc] level %d failures (%d/%d): %o', level, failures.length, levelRequirements.length, failures.slice(0, 10));
     }
@@ -336,28 +382,8 @@ class LevelCalculationService {
   }
 
   static getSurveyLevelMeta(survey) {
-    // Prefer survey.levels titles by index
-    let levelNames = [];
-    try {
-      const lv = survey?.levels;
-      const obj = lv instanceof Map ? Object.fromEntries(lv) : lv;
-      if (obj && typeof obj === 'object') {
-        Object.entries(obj).forEach(([k, v]) => {
-          const i = Number(k);
-          if (Number.isFinite(i)) levelNames[i] = (v && v.title) ? v.title : undefined;
-        });
-      }
-    } catch (_) {}
-    // Fill from requirementLevels if missing
-    if (!levelNames.length && Array.isArray(survey?.requirementLevels)) {
-      levelNames = survey.requirementLevels.map(n => String(n || '')).map(s => s.charAt(0).toUpperCase() + s.slice(1));
-    }
-    // Ensure at least defaults
-    if (!levelNames.length) levelNames = ['None', 'Basic', 'Pilot', 'Standard', 'Exemplar'];
-    // Normalize holes
-    for (let i = 0; i < levelNames.length; i += 1) {
-      if (!levelNames[i]) levelNames[i] = String(i);
-    }
+    // Use centralized level utilities
+    const levelNames = getLevelNames(survey);
     const maxLevel = levelNames.length - 1;
     return { levelNames, maxLevel };
   }

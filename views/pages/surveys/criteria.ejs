@@ -4,12 +4,23 @@
   <p>Locale: <strong><%= (survey.localleText || survey.localle || '').toUpperCase() %></strong></p>
   <p><a href="/surveys">← Back to Surveys</a></p>
 
-  <% const levelNames = {1: 'Basic', 2: 'Pilot', 3: 'Standard', 4: 'Exemplar'}; %>
+  <% 
+    // Use centralized level utilities if available, otherwise fallback
+    const getLevelName = (index) => {
+      if (survey && survey.levels) {
+        const level = survey.levels.get(String(index));
+        return level?.title || `Level ${index}`;
+      }
+      // Fallback names
+      const fallbackNames = {1: 'Basic', 2: 'Pilot', 3: 'Standard', 4: 'Exemplar'};
+      return fallbackNames[index] || `Level ${index}`;
+    };
+  %>
 
   <% [1,2,3,4].forEach(function(level){
        const items = levels[level] || [];
   %>
-    <h2>Level <%= level %> — <%= levelNames[level] %></h2>
+    <h2>Level <%= level %> — <%= getLevelName(level) %></h2>
     <% if (!items.length) { %>
       <p>No explicit requirements recorded for this level.</p>
     <% } else { %>

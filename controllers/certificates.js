@@ -2,8 +2,7 @@ import ResponseSet from '../models/ResponseSet.js';
 import Survey from '../models/Survey.js';
 import Dataset from '../models/Dataset.js';
 import { getCurrentUser } from './responseSets.js';
-
-const levelNames = ['None', 'Basic', 'Pilot', 'Standard', 'Exemplar'];
+import { getLevelName, getLevelNames } from '../utils/levels.js';
 
 function localizedText(val, locale = 'en') {
   if (!val) return '';
@@ -198,14 +197,14 @@ export async function renderCertificate(req, res, next) {
     const levelsContainer = survey.levels instanceof Map ? Object.fromEntries(survey.levels) : (survey.levels || {});
     const levelEntry = levelsContainer[String(levelIndex)] || null;
     const levelInfo = levelEntry || {
-      title: levelNames[levelIndex] || 'None',
+      title: getLevelName(survey, levelIndex),
       description: '',
       icon: ''
     };
 
     const viewModel = {
       locale: preferredLocale,
-      levelName: levelNames[rs.attainedLevel] || 'None',
+      levelName: getLevelName(survey, rs.attainedLevel),
       level: levelInfo,
       status: survey.status || 'final',
       certificateState: rs.state,
@@ -235,10 +234,10 @@ export async function renderCertificate(req, res, next) {
   }
 }
 
-// List or redirect to certificates for a dataset
-export async function listDatasetCertificates(req, res, next) {
+export async function listDatasetCertificatesData(req, res, next) {
   try {
     const { datasetId } = req.params;
+  
     const user = await getCurrentUser(req);
     const isAdmin = !!user?.admin;
 
@@ -250,7 +249,6 @@ export async function listDatasetCertificates(req, res, next) {
     } else {
       datasetDoc = await Dataset.findById(datasetId).select('_id').lean();
     }
-    console.log(datasetId);
     if (!datasetDoc) {
       const error = new Error('Dataset not found');
       error.status = 404;
@@ -272,7 +270,7 @@ export async function listDatasetCertificates(req, res, next) {
 
     const sets = await ResponseSet.find(filter)
       .sort({ createdAt: -1 })
-      .select('_id state attainedLevel createdAt updatedAt userId')
+      .select('_id state attainedLevel createdAt updatedAt userId surveyId')
       .lean();
 
     if (sets.length === 0) {
@@ -281,27 +279,102 @@ export async function listDatasetCertificates(req, res, next) {
       return next(error);
     }
 
-    // If exactly one published (or one visible) certificate, redirect to it
+    // Fetch survey data for all certificates to get proper level names and survey info
+    const surveyIds = [...new Set(sets.map(s => s.surveyId))];
+    const surveys = await Survey.find({ _id: { $in: surveyIds } })
+      .select('_id title localle localleText levels')
+      .lean();
+    
+    const surveyMap = new Map(surveys.map(s => [String(s._id), s]));
+
+    // Otherwise, render a selection list
+    const data = {
+      datasetId: String(datasetDoc._id),
+      certificates: sets.map(s => {
+        const survey = surveyMap.get(String(s.surveyId));
+        return {
+          id: String(s._id),
+          state: s.state,
+          level: getLevelName(survey, s.attainedLevel),
+          surveyTitle: survey?.title || 'Unknown Survey',
+          surveyLocale: survey?.localle || 'Unknown',
+          surveyLocaleText: survey?.localleText || '',
+          createdAt: s.createdAt,
+          updatedAt: s.updatedAt
+        };
+      })
+    };
+
+    res.json({ data: data.certificates });
+  } catch (err) {
+    console.error('Error listing dataset certificates:', err);
+    const error = new Error('Failed to list dataset certificates');
+    error.status = 500;
+    return next(error);
+  }
+}
+export async function findSingleCertificate(req, res, next) {
+  try {
+    const { datasetId } = req.params;
+  
+    const user = await getCurrentUser(req);
+    const isAdmin = !!user?.admin;
+
+    // Resolve dataset by legacy or mongo id
+    let datasetDoc = null;
+    const legacyIdNum = Number(datasetId);
+    if (!Number.isNaN(legacyIdNum) && Number.isFinite(legacyIdNum)) {
+      datasetDoc = await Dataset.findOne({ legacyId: legacyIdNum }).select('_id').lean();
+    } else {
+      datasetDoc = await Dataset.findById(datasetId).select('_id').lean();
+    }
+    if (!datasetDoc) {
+      const error = new Error('Dataset not found');
+      error.status = 404;
+      return next(error);
+    }
+
+    const filter = { datasetId: datasetDoc._id };
+    if (!isAdmin) {
+      // Not logged in or non-admin: only published
+      if (!user) {
+        filter.state = 'published';
+      } else {
+        filter.$or = [
+          { state: 'published' },
+          { userId: user._id }
+        ];
+      }
+    }
+
+    const sets = await ResponseSet.find(filter)
+      .sort({ createdAt: -1 })
+      .select('_id state attainedLevel createdAt updatedAt userId surveyId')
+      .lean();
+
     const published = sets.filter(s => s.state === 'published');
     if ((user && !isAdmin && sets.length === 1) || (!user && published.length === 1)) {
       const target = (user && !isAdmin) ? sets[0] : published[0];
       return res.redirect(302, `/datasets/${datasetDoc._id}/certificates/${target._id}`);
     }
+    else {
+      return res.redirect(302, `/datasets/${datasetDoc._id}/certificates`);
+    }
+  } catch (err) {
+    console.error('Error finding certificate:', err);
+    const error = new Error('Failed to find certificate');
+    error.status = 500;
+    return next(error);
+  }
+}
 
-    // Otherwise, render a selection list
-    const levelNames = ['None', 'Basic', 'Pilot', 'Standard', 'Exemplar'];
-    const viewModel = {
-      datasetId: String(datasetDoc._id),
-      certificates: sets.map(s => ({
-        id: String(s._id),
-        state: s.state,
-        level: levelNames[s.attainedLevel] || 'None',
-        createdAt: s.createdAt,
-        updatedAt: s.updatedAt
-      }))
-    };
-
-    res.render('pages/certificates/list', viewModel);
+// List certificates for a dataset
+export async function listDatasetCertificatesPage(req, res, next) {
+  try {
+    const { datasetId } = req.params;
+    const page = { title: 'Dataset Certificates', link: `/datasets/${req.params.datasetId}/certificates` };
+    res.locals.page = page;
+    res.render('pages/certificates/list', { datasetId });
   } catch (err) {
     console.error('Error listing dataset certificates', err);
     const error = new Error('Server error');

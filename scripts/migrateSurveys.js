@@ -520,6 +520,56 @@ class SurveyMigration {
         }
         return choice;
       });
+      
+      // Special handling for publisherRights question: add choice requirements if not already present
+      if (elementName === 'publisherRights' && element.type === 'radiogroup') {
+        element.choices = element.choices.map(choice => {
+          // Only add requirements if they don't already exist
+          if (!choice.requirement) {
+            switch (choice.value) {
+              case 'yes':
+                choice.requirement = {
+                  level: 3,
+                  progressText: { default: 'You should have a clear legal right to publish this data.' }
+                };
+                break;
+              case 'no':
+                choice.requirement = {
+                  level: 0,
+                  progressText: { default: 'You cannot publish this data as open data without the proper rights.' }
+                };
+                break;
+              case 'unsure':
+                choice.requirement = {
+                  level: 1,
+                  progressText: { default: 'You must clarify your rights to publish this data.' }
+                };
+                break;
+              case 'complicated':
+                choice.requirement = {
+                  level: 1,
+                  progressText: { default: 'You must clarify your rights to publish this data.' }
+                };
+                break;
+            }
+          }
+          return choice;
+        });
+        
+        // Also ensure the requirements array exists for element-level requirements
+        if (!element.requirements) {
+          element.requirements = [
+            {
+              level: 1,
+              progressText: { default: 'You must have the right to publish this data.' }
+            },
+            {
+              level: 3,
+              progressText: { default: 'You should have a clear legal right to publish this data.' }
+            }
+          ];
+        }
+      }
     }
 
     return element;

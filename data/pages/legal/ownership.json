@@ -12,26 +12,48 @@
         "choices": [
           {
             "value": "yes",
-            "text": "Yes, you have the rights to open this data up"
+            "text": "Yes, you have the rights to open this data up",
+            "requirement": {
+              "level": 3,
+              "progressText": "You should have a clear legal right to publish this data."
+            }
           },
           {
             "value": "no",
-            "text": "No, you don't have the rights to open up this data"
+            "text": "No, you don't have the rights to open up this data",
+            "requirement": {
+              "level": 0,
+              "progressText": "You cannot publish this data as open data without the proper rights."
+            }
           },
           {
             "value": "unsure",
-            "text": "You're not sure if you have the rights to publish this data as open data"
+            "text": "You're not sure if you have the rights to publish this data as open data",
+            "requirement": {
+              "level": 1,
+              "progressText": "You must clarify your rights to publish this data."
+            }
           },
           {
             "value": "complicated",
-            "text": "The rights in this data are complicated or unclear"
+            "text": "The rights in this data are complicated or unclear",
+            "requirement": {
+              "level": 1,
+              "progressText": "You must clarify your rights to publish this data."
+            }
           }
         ],
         "description": "If your organisation did not originally create or gather this data then you may not have the right to publish it as open data. If you are not sure, please check with the data owner for their permission. Open data is data that anyone can access, use and share – subject only, at most, to the requirement to attribute and share-alike.",
-        "requirement": {
-          "level": 1,
-          "progressText": "You must have the right to publish this data."
-        }
+        "requirements": [
+          {
+            "level": 1,
+            "progressText": "You must have the right to publish this data."
+          },
+          {
+            "level": 3,
+            "progressText": "You should have a clear legal right to publish this data."
+          }
+        ]
       },
       {
         "type": "text",

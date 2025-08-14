@@ -21,7 +21,7 @@ export async function getSurveyJson(req, res) {
     title: survey.title,
     fullTitle: survey.fullTitle,
     description: survey.description,
-    requirementLevels: survey.requirementLevels,
+    levels: survey.levels,
     pages
   });
 }

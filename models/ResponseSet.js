@@ -136,20 +136,15 @@ responseSetSchema.methods.canModify = function() {
   return this.state === 'draft';
 };
 
-responseSetSchema.methods.getLevelName = function() {
-  const levelNames = ['none', 'basic', 'pilot', 'standard', 'exemplar'];
-  return levelNames[this.attainedLevel] || 'none';
+responseSetSchema.methods.setLevel = function(level) {
+  this.attainedLevel = Math.max(0, Math.min(4, level));
 };
 
-responseSetSchema.methods.setLevel = function(level) {
-  if (typeof level === 'string') {
-    const levelNames = ['none', 'basic', 'pilot', 'standard', 'exemplar'];
-    this.attainedLevel = levelNames.indexOf(level);
-  } else {
-    this.attainedLevel = Math.max(0, Math.min(4, level));
-  }
-  this.attainedIndex = this.attainedLevel;
-  return this;
+responseSetSchema.methods.getLevelName = async function() {
+  // Fetch the survey to get proper level names
+  const Survey = mongoose.model('Survey');
+  const survey = await Survey.findById(this.surveyId).select('levels').lean();
+  return getLevelName(survey, this.attainedLevel);
 };
 
 // Static methods

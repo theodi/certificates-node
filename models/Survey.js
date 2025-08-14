@@ -32,10 +32,6 @@ const surveySchema = new mongoose.Schema({
     description: String,
     elements: [Object] // Full element definitions embedded directly
   }],
-  requirementLevels: {
-    type: [String],
-    default: ['none', 'basic', 'pilot', 'standard', 'exemplar']
-  },
   metaMap: {
     type: Map,
     of: String,
@@ -71,12 +67,31 @@ surveySchema.statics.findAvailable = function() {
 };
 
 // Instance methods
-surveySchema.methods.getLevelIndex = function(level) {
-  return this.requirementLevels.indexOf(level);
+surveySchema.methods.getLevelNames = function() {
+  // Convert levels Map to array of level names in order
+  const levelEntries = Array.from(this.levels.entries());
+  // Sort by key (assuming keys are numeric strings like "0", "1", "2", etc.)
+  levelEntries.sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
+  return levelEntries.map(([key, level]) => level.title || key);
 };
 
 surveySchema.methods.getLevelName = function(index) {
-  return this.requirementLevels[index] || 'none';
+  const level = this.levels.get(String(index));
+  return level?.title || String(index);
+};
+
+surveySchema.methods.getLevelDescription = function(index) {
+  const level = this.levels.get(String(index));
+  return level?.description || '';
+};
+
+surveySchema.methods.getLevelIcon = function(index) {
+  const level = this.levels.get(String(index));
+  return level?.icon || '';
+};
+
+surveySchema.methods.getLevelCount = function() {
+  return this.levels.size;
 };
 
 export default mongoose.model('Survey', surveySchema);

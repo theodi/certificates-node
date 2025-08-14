@@ -1,8 +1,8 @@
 import ResponseSet from '../models/ResponseSet.js';
 import User from '../models/User.js';
 import Dataset from '../models/Dataset.js';
-
-const levelNames = ['none', 'basic', 'pilot', 'standard', 'exemplar'];
+import { getLevelName } from '../utils/levels.js';
+import Survey from '../models/Survey.js';
 
 export async function getCurrentUser(req) {
   const sessionUser = req.session?.passport ? req.session.passport.user : req.session?.user;
@@ -32,7 +32,8 @@ export async function listResponseSetsData(req, res, next) {
           _id: '$datasetId',
           myCount: { $sum: 1 },
           latestUpdatedAt: { $max: '$updatedAt' },
-          maxLevel: { $max: '$attainedLevel' }
+          maxLevel: { $max: '$attainedLevel' },
+          surveyIds: { $addToSet: '$surveyId' }
       }}
     ]);
 
@@ -46,17 +47,29 @@ export async function listResponseSetsData(req, res, next) {
       .select('_id title url removed legacyId createdAt updatedAt')
       .lean();
 
+    // Fetch survey data for all response sets to get proper level names
+    const allSurveyIds = [...new Set(grouped.flatMap(g => g.surveyIds))];
+    const surveys = await Survey.find({ _id: { $in: allSurveyIds } })
+      .select('_id title localle localleText levels')
+      .lean();
+    
+    const surveyMap = new Map(surveys.map(s => [String(s._id), s]));
+
     const cap = (s) => (typeof s === 'string' && s.length) ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 
     const data = datasets.map(ds => {
       const agg = datasetIdToAgg.get(String(ds._id));
+      // For now, use the first survey found for this dataset (could be enhanced to show multiple)
+      const firstSurveyId = agg?.surveyIds?.[0];
+      const survey = firstSurveyId ? surveyMap.get(String(firstSurveyId)) : null;
+      
       return {
         id: String(ds._id),
         legacyId: ds.legacyId || null,
         dataTitle: ds.title,
         webpage: ds.url,
         myCount: agg?.myCount || 0,
-        levelLabel: cap(levelNames[agg?.maxLevel ?? 0] || 'none'),
+        levelLabel: cap(getLevelName(survey, agg?.maxLevel ?? 0)),
         updatedAt: agg?.latestUpdatedAt || ds.updatedAt,
         actions: `/datasets/${String(ds._id)}`
       };
@@ -107,7 +120,6 @@ export async function listPublicDatasetsData(req, res, next) {
         dataTitle: ds.title,
         webpage: ds.url,
         myCount: agg?.pubCount || 0,
-        levelLabel: cap(levelNames[agg?.maxLevel ?? 0] || 'none'),
         updatedAt: agg?.latestUpdatedAt || ds.updatedAt,
         actions: `/datasets/${String(ds._id)}`
       };
@@ -128,48 +140,6 @@ export async function listDatasetCertificatesPage(req, res) {
   res.locals.datasetId = req.params.id;
   res.render('pages/datasets/dataset');
 }
-
-export async function listDatasetCertificatesData(req, res, next) {
-  try {
-    const { id } = req.params;
-    const user = await getCurrentUser(req);
-    const isAdmin = !!user?.admin;
-    const filter = { datasetId: id };
-    if (!user) {
-      // public: only published
-      filter.state = 'published';
-    } else if (!isAdmin) {
-      // logged-in non-admin: owner only
-      filter.userId = user?._id;
-    }
-
-    const docs = await ResponseSet.find(filter)
-      .sort({ createdAt: -1 })
-      .lean();
-
-    const cap = (s) => (typeof s === 'string' && s.length) ? s.charAt(0).toUpperCase() + s.slice(1) : s;
-
-      const data = docs.map(doc => ({
-      id: String(doc._id),
-      legacyId: doc.legacyId || null,
-      state: doc.state,
-      stateLabel: cap(doc.state),
-      levelLabel: cap(levelNames[doc.attainedLevel] || 'none'),
-      createdAt: doc.createdAt,
-      updatedAt: doc.updatedAt,
-      viewUrl: `/datasets/${id}/certificates/${String(doc._id)}`,
-        editUrl: `/datasets/${id}/certificates/${String(doc._id)}/edit`
-    }));
-
-    res.json({ data });
-  } catch (err) {
-    console.error('Error listing dataset certificates:', err);
-    const error = new Error('Failed to list dataset certificates');
-    error.status = 500;
-    return next(error);
-  }
-}
-
 // Middleware for per-resource access if needed later
 export async function ensureAdminOrOwner(req, res, next) {
   try {

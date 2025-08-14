@@ -1,7 +1,7 @@
 import express from 'express';
 import { ensureAuthenticated } from '../middleware/auth.js';
-import { listResponseSetsPage, listResponseSetsData, listDatasetCertificatesPage, listDatasetCertificatesData, listPublicDatasetsPage, listPublicDatasetsData } from '../controllers/responseSets.js';
-import { renderCertificate, listDatasetCertificates, deleteCertificate } from '../controllers/certificates.js';
+import { listResponseSetsPage, listResponseSetsData, listPublicDatasetsPage, listPublicDatasetsData } from '../controllers/responseSets.js';
+import { renderCertificate, listDatasetCertificatesPage, listDatasetCertificatesData, deleteCertificate, findSingleCertificate } from '../controllers/certificates.js';
 import { newDatasetPage, createOrSelectDataset, chooseSurveyPage, chooseSurveyData, createDraftResponseSet, renderEditResponseSetPage, deleteDataset } from '../controllers/datasets.js';
 import { getResponseSetJson, saveResponsesPatch, publishDraft } from '../controllers/responseApi.js';
 
@@ -43,15 +43,14 @@ router.patch('/:datasetId/certificates/:responseSetId', ensureAuthenticated, sav
 router.post('/:datasetId/certificates/:responseSetId/publish', ensureAuthenticated, publishDraft);
 
 // Drill-down: certificates for a dataset (public: published; logged-in: owner/admin rules) with content negotiation
-router.get('/:id', (req, res, next) =>
+router.get('/:datasetId/certificates', (req, res, next) =>
   res.format({
     html: () => listDatasetCertificatesPage(req, res, next),
     json: () => listDatasetCertificatesData(req, res, next)
   })
 );
 
-// Certificates (public/published, or owner when logged in)
-router.get('/:datasetId/certificates', listDatasetCertificates);
+router.get('/:datasetId/certificate', findSingleCertificate);
 
 // Delete routes
 router.delete('/:datasetId', ensureAuthenticated, deleteDataset);

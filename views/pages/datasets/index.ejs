@@ -18,9 +18,8 @@
     <thead>
       <tr>
         <th>Dataset</th>
-        <th># of Certificates</th>
-        <th>Top Level</th>
         <th>Updated</th>
+        <th># of Certificates</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -53,11 +52,10 @@
             return url ? `<a href="${url}" target="_blank" rel="noopener">${text}</a>` : text;
           }
         },
-        { data: 'myCount' },
-        { data: 'levelLabel' },
         { data: 'updatedAt', render: (d) => d ? new Date(d).toLocaleString() : '' },
+        { data: 'myCount' },
                  { data: 'actions', render: (d, t, row) => {
-             const viewLink = `<a class="button btn" href="${d}">View certificates</a>`;
+             const viewLink = `<a class="button btn" href="/datasets/${row.id}/certificates">View certificates</a>`;
              const isLoggedIn = <%- JSON.stringify(!!user) %>;
              const isMyPath = window.location.pathname.indexOf('/datasets/my') === 0;
              

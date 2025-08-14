@@ -4,6 +4,7 @@ export function calculateProgress(schemaQuestions, data, certProgress, selectedL
     Object.keys(certProgress.levels).forEach(level => {
       certProgress.levels[level].progress = 0;
       certProgress.levels[level].unmet = [];
+      certProgress.levels[level].blocked = false; // Add blocked flag
     });
   
     const getText = (progressText) =>
@@ -37,8 +38,27 @@ export function calculateProgress(schemaQuestions, data, certProgress, selectedL
     const isSingle = question.type === 'radiogroup';
     if (isSingle) {
       const selectedChoice = question.choices.find(c => c?.value === selected[0]);
-      if (selectedChoice?.requirement?.level) {
-        incrementProgress(selectedChoice.requirement.level, certProgress);
+      
+      if (selectedChoice?.requirement?.level !== undefined) {
+        const choiceLevel = selectedChoice.requirement.level;
+        
+        if (choiceLevel === 0) {
+          // Level 0 blocks all levels
+          Object.keys(certProgress.levels).forEach(level => {
+            if (Number(level) > 0) {
+              certProgress.levels[level].blocked = true;
+              const reqText = getText(selectedChoice.requirement.progressText) || 'This choice blocks all levels';
+              certProgress.levels[level].unmet.push({ 
+                text: reqText, 
+                questionName: question.name,
+                blocking: true 
+              });
+            }
+          });
+        } else {
+          // Normal level requirement
+          incrementProgress(choiceLevel, certProgress);
+        }
       }
   
       const choiceLevels = question.choices
@@ -56,7 +76,23 @@ export function calculateProgress(schemaQuestions, data, certProgress, selectedL
     } else {
       question.choices.forEach((choice) => {
         if (choice?.requirement?.level && selected.includes(choice.value)) {
-          incrementProgress(choice.requirement.level, certProgress);
+          const choiceLevel = choice.requirement.level;
+          if (choiceLevel === 0) {
+            // Level 0 blocks all levels
+            Object.keys(certProgress.levels).forEach(level => {
+              if (Number(level) > 0) {
+                certProgress.levels[level].blocked = true;
+                const reqText = getText(choice.requirement.progressText) || 'This choice blocks all levels';
+                certProgress.levels[level].unmet.push({ 
+                  text: reqText, 
+                  questionName: question.name,
+                  blocking: true 
+                });
+              }
+            });
+          } else {
+            incrementProgress(choiceLevel, certProgress);
+          }
         }
       });
     }
@@ -124,42 +160,46 @@ export function calculateProgress(schemaQuestions, data, certProgress, selectedL
         }
       }
       
-      // Fallback to requirementLevels array
-      if (levelName === `Level ${level}` && Array.isArray(surveyData.requirementLevels)) {
-        const levelIndex = Number(level);
-        if (surveyData.requirementLevels[levelIndex]) {
-          levelName = surveyData.requirementLevels[levelIndex];
-          // Capitalize first letter
-          levelName = levelName.charAt(0).toUpperCase() + levelName.slice(1);
-        }
-      }
-      
       return levelName;
     };
   
     Object.keys(certProgress.levels)
       .filter(lvl => Number(lvl) > 0)
       .forEach(level => {
-        const { progress, unmet } = certProgress.levels[level];
+        const { progress, unmet, blocked } = certProgress.levels[level];
         const uniqueUnmet = deduplicateUnmet(unmet);
         const total = progress + uniqueUnmet.length;
         const pct = total > 0 ? (progress / total) * 100 : 0;
         const levelName = getLevelName(level);
   
-        const unmetHtml = uniqueUnmet.length
-          ? `<details><summary>${uniqueUnmet.length} unmet requirements</summary>
-               <ul>${uniqueUnmet.map(req =>
-                 `<li><a href="#" class="navigate-to-question" data-question-name="${req.questionName}">${req.text}</a></li>`
-               ).join('')}</ul>
-             </details>`
-          : `<p>All requirements met for this level.</p>`;
+        let statusHtml = '';
+        if (blocked) {
+          const blockingReqs = uniqueUnmet.filter(req => req.blocking);
+          statusHtml = `<div class="level-blocked">
+            <p><strong>This level is blocked by the following requirements:</strong></p>
+            <ul>${blockingReqs.map(req =>
+              `<li><a href="#" class="navigate-to-question" data-question-name="${req.questionName}">${req.text}</a></li>`
+            ).join('')}</ul>
+          </div>`;
+        } else if (uniqueUnmet.length) {
+          statusHtml = `<details><summary>${uniqueUnmet.length} unmet requirements</summary>
+            <ul>${uniqueUnmet.map(req =>
+              `<li><a href="#" class="navigate-to-question" data-question-name="${req.questionName}">${req.text}</a></li>`
+            ).join('')}</ul>
+          </details>`;
+        } else {
+          statusHtml = `<p>All requirements met for this level.</p>`;
+        }
+  
+        const progressBarClass = blocked ? 'progress-bar blocked' : 'progress-bar';
+        const progressBarStyle = blocked ? 'width:0%' : `width:${pct}%`;
   
         container.insertAdjacentHTML('beforeend', `
-          <div class="level-progress">
+          <div class="level-progress ${blocked ? 'level-blocked' : ''}">
             <h4>Level ${level} - ${levelName}</h4>
-            <div class="progress-bar"><div style="width:${pct}%"></div></div>
+            <div class="${progressBarClass}"><div style="${progressBarStyle}"></div></div>
             <p>${progress} out of ${total} requirements met (${Math.round(pct)}%)</p>
-            ${unmetHtml}
+            ${statusHtml}
           </div>
         `);
       });
@@ -176,7 +216,7 @@ export function calculateProgress(schemaQuestions, data, certProgress, selectedL
   function deduplicateUnmet(unmet) {
     const seen = new Set();
     return (unmet || []).filter(req => {
-      const key = `${req.questionName}::${req.text}`;
+      const key = `${req.questionName}::${req.text}::${req.blocking || false}`;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;

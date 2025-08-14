@@ -79,9 +79,9 @@ app.use(express.static(__dirname + '/public')); // Public directory
 
 // Auth routes
 app.use('/auth', authRoutes);
-app.use('/', redirectsRouter);
 app.use('/datasets', datasetsRouter);
 app.use('/surveys', surveysRouter);
+app.use('/', redirectsRouter);
 
 app.get('/admin', function(req,res) {
   res.redirect('/auth/google');
