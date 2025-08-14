@@ -14,6 +14,7 @@ import session from 'express-session';
 import logger from 'morgan';
 import passport from './passport.js';
 import authRoutes from './routes/auth.js';
+import { ensureAuthenticatedPrivate } from './middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -44,8 +45,6 @@ app.use(function(req, res, next) {
   next();
 });
 
-app.use(express.static(__dirname + '/public')); // Public directory
-
 app.use((req, res, next) => {
   // Read package.json file
   fs.readFile(path.join(__dirname, 'package.json'), 'utf8', (err, data) => {
@@ -75,6 +74,8 @@ app.use((req, res, next) => {
   res.setHeader('Expires', '0'); // Proxies.
   next();
 });
+
+app.use(express.static(__dirname + '/public')); // Public directory
 
 // Auth routes
 app.use('/auth', authRoutes);
@@ -116,6 +117,8 @@ app.get('/about', function(req, res) {
 })();
 
 app.use('/data', surveysRouter);
+
+app.use(ensureAuthenticatedPrivate, express.static(__dirname + '/private')); // Private directory
 
 // Error handling
 app.get('/error', (req, res) => res.send("error logging in"));

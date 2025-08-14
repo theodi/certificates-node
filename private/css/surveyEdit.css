@@ -1,0 +1,68 @@
+.longText input {
+    min-width: 80%;
+}
+.submit {
+    margin-top: 2em;
+}
+.padded {
+    padding: 2em;
+}
+.sidebar {
+    float: left;
+    width: 20%;
+    padding: 10px;
+}
+.survey-element {
+    float: left;
+    width: 50%;
+    padding: 10px;
+}
+.certification-progress {
+    float: right;
+    padding: 20px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    width: 280px;
+}
+.level-progress {
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 8px;
+}
+.progress-bar {
+    position: relative;
+    background-color: #f3f3f3;
+    height: 20px;
+    width: 100%;
+    border-radius: 10px;
+}
+.progress-bar > div {
+    background-color: #4caf50;
+    height: 100%;
+    border-radius: 10px;
+}
+/* Temporary visual cue after navigation */
+.flash-highlight {
+    position: relative;
+    animation: flash-bg 1.2s ease-in-out 0s 1;
+    outline: 2px solid rgba(255, 193, 7, 0.9); /* amber-ish outline */
+    border-radius: 6px;
+  }
+  
+  /* Soft background pulse */
+  @keyframes flash-bg {
+    0%   { background-color: rgba(255, 243, 205, 0.9); }  /* light amber */
+    50%  { background-color: rgba(255, 232, 161, 0.6); }
+    100% { background-color: transparent; }
+  }
+  
+  /* Respect reduced motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    .flash-highlight {
+      animation: none;
+      background-color: transparent !important;
+      box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.5) inset;
+    }
+  }
+  
