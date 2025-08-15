@@ -1,142 +1,33 @@
 <%- include('../../partials/header') %>
 
+<link rel="stylesheet" href="/css/certificate.css">
+
 <section class="content-block white">
-  <style>
-    /* Hide bullets for the top-level certificate items */
-    .certificate-data > ul {
-      list-style: none;
-      padding-left: 0;
-      margin-left: 0;
-    }
-    /* Nested answer list should look like standard bullets */
-    .certificate-data .answer-list {
-      list-style: disc;
-      margin-left: 1.5em;
-      padding-left: 0.5em;
-    }
-    .certificate-data a {
-      color: black !important;
-    }
-
-    /* Two-column layout for summary (left) and content (right) */
-    .certificate-layout {
-      display: flex;
-      align-items: flex-start;
-      gap: 24px;
-      margin-top: 16px;
-      max-width: 1200px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .summary-sidebar {
-      flex: 0 0 28%;
-      max-width: 360px;
-    }
-    .main-content {
-      flex: 1 1 auto;
-      min-width: 0;
-    }
-
-    /* Section items in two columns */
-    .certificate-data .section-items {
-      list-style: none;
-      padding-left: 0;
-      margin-left: 0;
-      columns: 2;
-      column-gap: 24px;
-    }
-    .certificate-data .section-items > li {
-      break-inside: avoid;
-      margin-bottom: 12px;
-      padding-left: 0;
-    }
-
-    /* Title lighter than the answer */
-    .certificate-data h4.item-title {
-      font-weight: 500;
-      margin: 0 0 6px 0;
-    }
-    .certificate-data .answer,
-    .certificate-data .answer-list li {
-      font-weight: 600;
-    }
-
-    @media (max-width: 900px) {
-      .certificate-layout { flex-direction: column; }
-      .summary-sidebar { flex: 1 1 auto; max-width: none; }
-      .certificate-data .section-items { columns: 1; }
-    }
-    .visually-hidden {
-      display: none;
-    }
-    .certificate {
-      border: 2px solid #333;
-      padding: 18px;
-      border-radius: 8px;
-      background: #faf9f6;
-      margin-bottom: 36px;
-      max-width: 800px;
-      margin-left: auto;
-      margin-right: auto;
-      margin-top: 18px;
-    }
-    /* Watermark/diagonal lines when not published */
-    .certificate.watermarked { position: relative; overflow: hidden; }
-    .certificate.watermarked::after {
-      content: '';
-      position: absolute; inset: 0;
-      background: repeating-linear-gradient(45deg,
-        rgba(0,0,0,0.04) 0 12px,
-        rgba(0,0,0,0.00) 12px 24px);
-      pointer-events: none; z-index: 0;
-    }
-    .certificate.watermarked::before {
-      content: attr(data-watermark);
-      position: absolute; top: 50%; left: 50%;
-      transform: translate(-50%, -50%) rotate(-18deg);
-      font-size: 72px; font-weight: 800;
-      color: rgba(0,0,0,0.08); letter-spacing: 8px;
-      text-transform: uppercase; pointer-events: none; z-index: 0;
-      white-space: nowrap;
-    }
-    .certificate > * { position: relative; z-index: 1; }
-    .localle {
-      color: white;
-      background-color: var(--color-dark-blue);
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-weight: 600;
-      font-size: 14px;
-    }
-    .status {
-      color: var(--color-dark-blue);
-    }
-  </style>
   <h1 class="visually-hidden"><%= dataTitle %></h1>
   <% if (certificateState && certificateState !== 'published') { %>
-    <div style="background: var(--color-dark-blue); color:white; padding:12px 12px; border-radius:4px; margin-bottom:12px; text-align:center;">
-      This certificate is in <strong style="color:white;" ><%= certificateState %></strong> state.
+    <div class="certificate-state-notice">
+      This certificate is in <strong><%= certificateState %></strong> state.
     </div>
   <% } %>
   <div class='certificate <%= (certificateState && certificateState !== 'published') ? "watermarked" : "" %>' data-watermark="<%= (certificateState && certificateState !== 'published') ? certificateState.toUpperCase() : '' %>">
-    <div style="display: flex; align-items: center; gap: 16px;">
-      <div style="display:flex; flex-direction:column; align-items:center; gap:6px; min-width: 100px;">
+    <div class="certificate-header">
+      <div class="certificate-badge-container">
         <% if (level && level.icon) { %>
-          <img src="/<%= level.icon %>" alt="<%= levelName %> badge" style="width: 80px; height: 80px; object-fit: contain;">
+          <img src="/<%= level.icon %>" alt="<%= levelName %> badge" class="certificate-badge">
         <% } %>
-        <div style="font-weight: 600; font-size: 24px; color:#333; text-align:center;"> <%= levelName %> </div>
+        <div class="certificate-level-name"><%= levelName %></div>
       </div>
       <div>
-        <h2 style="margin: 0 0 12px 0; font-size: 28px;"><%= certificateTitle %></h2>
-        <div style="color: #666;">
+        <h2 class="certificate-title"><%= certificateTitle %></h2>
+        <div class="certificate-meta">
           <span class='badge localle'><%= jurisdiction %></span>
           <span class='status'><%= status %></span>
         </div>
       </div>
     </div>
-    <hr style="margin: 12px 0;">
+    <hr class="certificate-divider">
     <div>
-      <p style="margin: 6px 0; font-size: 18px;">
+      <p class="certificate-description">
         This certifies that the dataset
         <strong>“<%= dataTitle %>”</strong>
         published by <strong><%= publisher %></strong>
@@ -145,17 +36,74 @@
         level on <%= new Date(createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' }) %>.
       </p>
       <% if (level && level.description) { %>
-        <p style="margin: 6px 0; color: #444;"><%= level.description %></p>
+        <p class="certificate-level-description"><%= level.description %></p>
       <% } %>
+    </div>
+  </div>
+
+  <% if (certificateState === 'published') { %>
+    <div class="embed-button-container">
+      <button id="embedButton" class="btn btn-primary embed-button">
+        Embed this on your site
+      </button>
+    </div>
+  <% } %>
+
+  <!-- Embed Overlay -->
+  <div id="embedOverlay" class="embed-overlay">
+    <div class="embed-modal">
+      <button id="closeEmbed" class="embed-close">&times;</button>
+      
+      <h2 class="embed-title">Embed on your site</h2>
+      
+      <!-- Badge Section -->
+      <div class="embed-section">
+        <div class="embed-section-header">
+          <% if (level && level.icon) { %>
+            <img src="/<%= level.icon %>" alt="<%= levelName %> badge" class="embed-section-icon">
+          <% } %>
+          <div>
+            <h3 class="embed-section-title">Badge</h3>
+            <p class="embed-section-subtitle"><%= levelName %></p>
+          </div>
+        </div>
+        
+        <h4 class="embed-code-title">Use the code below to add this badge to your site</h4>
+        <div class="embed-code-container">
+          <code id="badgeCode">&lt;script src='<%= baseUrl %>/datasets/<%= datasetId %>/certificates/<%= responseSetId %>/badge.js'&gt;&lt;/script&gt;</code>
+        </div>
+        <button onclick="copyToClipboard('badgeCode')" class="embed-copy-button">
+          Copy code
+        </button>
+      </div>
+      
+      <!-- Certificate Section -->
+      <div class="embed-section">
+        <div class="embed-section-header">
+          <img src="/images/certificate-preview.png" alt="Certificate Preview" class="embed-section-icon">
+          <div>
+            <h3 class="embed-section-title">Certificate</h3>
+            <p class="embed-section-subtitle">Full certificate embed</p>
+          </div>
+        </div>
+        
+        <h4 class="embed-code-title">Use the code below to embed this certificate on your site</h4>
+        <div class="embed-code-container">
+          <code id="certificateCode">&lt;iframe height='800' src='<%= baseUrl %>/datasets/<%= datasetId %>/certificates/<%= responseSetId %>/embed' width='600'&gt;&lt;/iframe&gt;</code>
+        </div>
+        <button onclick="copyToClipboard('certificateCode')" class="embed-copy-button">
+          Copy code
+        </button>
+      </div>
     </div>
   </div>
 
   <div class="certificate-layout">
     <aside class="summary-sidebar">
       <% if (summary) { %>
-        <div class="summary-box" style="border: 1px solid #ccc; padding: 12px; border-radius: 6px; margin-top: 12px;">
-          <h3 style="margin-top: 0;">Summary</h3>
-          <ul style="list-style: none; padding-left: 0;">
+        <div class="summary-box">
+          <h3>Summary</h3>
+          <ul class="summary-list">
             <li>
               <strong>Dataset title:</strong>
               <% if ((summary.title || []).length > 1) { %>
@@ -272,6 +220,97 @@
   </div>
 
 </section>
+
+<% if (certificateState === 'published') { %>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const embedButton = document.getElementById('embedButton');
+  const embedOverlay = document.getElementById('embedOverlay');
+  const closeEmbed = document.getElementById('closeEmbed');
+
+  // Show overlay when embed button is clicked
+  embedButton.addEventListener('click', function() {
+    embedOverlay.style.display = 'block';
+    document.body.style.overflow = 'hidden'; // Prevent background scrolling
+  });
+
+  // Close overlay when X button is clicked
+  closeEmbed.addEventListener('click', function() {
+    embedOverlay.style.display = 'none';
+    document.body.style.overflow = 'auto'; // Restore scrolling
+  });
+
+  // Close overlay when clicking outside the modal
+  embedOverlay.addEventListener('click', function(e) {
+    if (e.target === embedOverlay) {
+      embedOverlay.style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+  });
+
+  // Close overlay with Escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && embedOverlay.style.display === 'block') {
+      embedOverlay.style.display = 'none';
+      document.body.style.overflow = 'auto';
+    }
+  });
+});
+
+// Copy to clipboard function
+function copyToClipboard(elementId) {
+  const element = document.getElementById(elementId);
+  const text = element.textContent;
+  
+  if (navigator.clipboard && window.isSecureContext) {
+    // Use modern clipboard API
+    navigator.clipboard.writeText(text).then(function() {
+      showCopyFeedback(elementId);
+    }).catch(function(err) {
+      console.error('Failed to copy: ', err);
+      fallbackCopyTextToClipboard(text, elementId);
+    });
+  } else {
+    // Fallback for older browsers
+    fallbackCopyTextToClipboard(text, elementId);
+  }
+}
+
+function fallbackCopyTextToClipboard(text, elementId) {
+  const textArea = document.createElement('textarea');
+  textArea.value = text;
+  textArea.style.top = '0';
+  textArea.style.left = '0';
+  textArea.style.position = 'fixed';
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  
+  try {
+    const successful = document.execCommand('copy');
+    if (successful) {
+      showCopyFeedback(elementId);
+    }
+  } catch (err) {
+    console.error('Fallback: Oops, unable to copy', err);
+  }
+  
+  document.body.removeChild(textArea);
+}
+
+function showCopyFeedback(elementId) {
+  const button = document.querySelector(`#${elementId}`).nextElementSibling;
+  const originalText = button.textContent;
+  button.textContent = 'Copied!';
+  button.style.background = '#28a745';
+  
+  setTimeout(function() {
+    button.textContent = originalText;
+    button.style.background = '#666';
+  }, 2000);
+}
+</script>
+<% } %>
 
 <%- include('../../partials/footer') %>
 

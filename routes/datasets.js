@@ -1,9 +1,9 @@
 import express from 'express';
 import { ensureAuthenticated } from '../middleware/auth.js';
-import { listResponseSetsPage, listResponseSetsData, listPublicDatasetsPage, listPublicDatasetsData } from '../controllers/responseSets.js';
-import { renderCertificate, listDatasetCertificatesPage, listDatasetCertificatesData, deleteCertificate, findSingleCertificate } from '../controllers/certificates.js';
+import { listResponseSetsPage, listResponseSetsData, listPublicDatasetsPage, listPublicDatasetsData, getCurrentUser } from '../controllers/responseSets.js';
+import { renderCertificate, listDatasetCertificatesPage, listDatasetCertificatesData, deleteCertificate, renderCertificateBadge, renderCertificateBadgeJs, getSingleCertificateId } from '../controllers/certificates.js';
 import { newDatasetPage, createOrSelectDataset, chooseSurveyPage, chooseSurveyData, createDraftResponseSet, renderEditResponseSetPage, deleteDataset } from '../controllers/datasets.js';
-import { getResponseSetJson, saveResponsesPatch, publishDraft } from '../controllers/responseApi.js';
+import { getResponseSetJson, saveResponsesPatch, publishCertificate, unpublishCertificate } from '../controllers/responseApi.js';
 
 const router = express.Router();
 
@@ -39,12 +39,19 @@ router.get('/:datasetId/certificates/:responseSetId', (req, res, next) =>
     json: () => getResponseSetJson(req, res, next)
   })
 );
+router.get('/:datasetId/certificates/:responseSetId/badge.png', (req, res, next) => {
+  return renderCertificateBadge(req, res, next);
+});
+router.get('/:datasetId/certificates/:responseSetId/badge.js', (req, res, next) => {
+  return renderCertificateBadgeJs(req, res, next);
+});
 router.get('/:datasetId/certificates/:responseSetId/embed', (req, res, next) => {
   req.embed = true;
   return renderCertificate(req, res, next);
 });
 router.patch('/:datasetId/certificates/:responseSetId', ensureAuthenticated, saveResponsesPatch);
-router.post('/:datasetId/certificates/:responseSetId/publish', ensureAuthenticated, publishDraft);
+router.post('/:datasetId/certificates/:responseSetId/publish', ensureAuthenticated, publishCertificate);
+router.post('/:datasetId/certificates/:responseSetId/unpublish', ensureAuthenticated, unpublishCertificate);
 
 // Drill-down: certificates for a dataset (public: published; logged-in: owner/admin rules) with content negotiation
 router.get('/:datasetId/certificates', (req, res, next) =>
@@ -54,10 +61,84 @@ router.get('/:datasetId/certificates', (req, res, next) =>
   })
 );
 
-router.get('/:datasetId/certificate', findSingleCertificate);
-router.get('/:datasetId/certificate/embed', (req, res, next) => {
-  req.embed = true;
-  return findSingleCertificate(req, res, next);
+router.get('/:datasetId/certificate', async (req, res, next) => {
+  try {
+    const user = await getCurrentUser(req);
+    const result = await getSingleCertificateId(req.params.datasetId, user);
+    if (result.error) {
+      const error = new Error(result.error);
+      error.status = 404;
+      return next(error);
+    }
+    if (result.certificateId) {
+      return res.redirect(302, `/datasets/${result.datasetId}/certificates/${result.certificateId}`);
+    } else {
+      return res.redirect(302, `/datasets/${req.params.datasetId}/certificates`);
+    }
+  } catch (err) {
+    return next(err);
+  }
+});
+
+router.get('/:datasetId/certificate/embed', async (req, res, next) => {
+  try {
+    const user = await getCurrentUser(req);
+    const result = await getSingleCertificateId(req.params.datasetId, user);
+    if (result.error) {
+      const error = new Error(result.error);
+      error.status = 404;
+      return next(error);
+    }
+    if (result.certificateId) {
+      return res.redirect(302, `/datasets/${result.datasetId}/certificates/${result.certificateId}/embed`);
+    } else {
+      return res.redirect(302, `/datasets/${req.params.datasetId}/certificates`);
+    }
+  } catch (err) {
+    return next(err);
+  }
+});
+
+router.get('/:datasetId/certificate/badge.png', async (req, res, next) => {
+  try {
+    const user = await getCurrentUser(req);
+    const result = await getSingleCertificateId(req.params.datasetId, user);
+    if (result.error) {
+      const error = new Error(result.error);
+      error.status = 404;
+      return next(error);
+    }
+    if (result.certificateId) {
+      return res.redirect(302, `/datasets/${result.datasetId}/certificates/${result.certificateId}/badge.png`);
+    } else {
+      const error = new Error('No single certificate found for badge');
+      error.status = 404;
+      return next(error);
+    }
+  } catch (err) {
+    return next(err);
+  }
+});
+
+router.get('/:datasetId/certificate/badge.js', async (req, res, next) => {
+  try {
+    const user = await getCurrentUser(req);
+    const result = await getSingleCertificateId(req.params.datasetId, user);
+    if (result.error) {
+      const error = new Error(result.error);
+      error.status = 404;
+      return next(error);
+    }
+    if (result.certificateId) {
+      return res.redirect(302, `/datasets/${result.datasetId}/certificates/${result.certificateId}/badge.js`);
+    } else {
+      const error = new Error('No single certificate found for badge');
+      error.status = 404;
+      return next(error);
+    }
+  } catch (err) {
+    return next(err);
+  }
 });
 
 // Delete routes

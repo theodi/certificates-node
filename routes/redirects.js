@@ -17,7 +17,12 @@ router.get('/:locale/datasets/:datasetId/certificate', (req, res) => {
 router.get('/:locale/datasets/:datasetId/certificate/embed', (req, res) => {
   res.redirect(301, `/datasets/${req.params.datasetId}/certificate/embed`);
 });
-
+router.get('/:locale/datasets/:datasetId/certificate/badge.png', (req, res) => {
+  res.redirect(301, `/datasets/${req.params.datasetId}/certificate/badge.png`);
+});
+router.get('/:locale/datasets/:datasetId/certificate/badge.js', (req, res) => {
+  res.redirect(301, `/datasets/${req.params.datasetId}/certificate/badge.js`);
+}); 
 router.get('/:locale/datasets/', (req, res) => {
   res.redirect(301, `/datasets/`);
 });

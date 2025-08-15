@@ -2,7 +2,7 @@ import ResponseSet from '../models/ResponseSet.js';
 import Survey from '../models/Survey.js';
 import Dataset from '../models/Dataset.js';
 import { getCurrentUser } from './responseSets.js';
-import { getLevelName, getLevelNames } from '../utils/levels.js';
+import { getLevelName, getLevelNames, getLevelIcon } from '../utils/levels.js';
 
 function localizedText(val, locale = 'en') {
   if (!val) return '';
@@ -203,6 +203,11 @@ export async function renderCertificate(req, res, next) {
       icon: ''
     };
 
+    // Get base URL for embed codes
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const baseUrl = `${protocol}://${host}`;
+
     const viewModel = {
       locale: preferredLocale,
       levelName: getLevelName(survey, rs.attainedLevel),
@@ -220,7 +225,11 @@ export async function renderCertificate(req, res, next) {
         releaseType: releaseTypeEntries
       },
       sections,
-      createdAt: rs.createdAt
+      createdAt: rs.createdAt,
+      // Add URL information for embed codes
+      baseUrl,
+      datasetId,
+      responseSetId
     };
 
     const page = { title: dataTitle, link: `/datasets/${datasetId}/certificates/${responseSetId}` };
@@ -298,7 +307,8 @@ export async function listDatasetCertificatesData(req, res, next) {
         return {
           id: String(s._id),
           state: s.state,
-          level: getLevelName(survey, s.attainedLevel),
+          level: s.attainedLevel,
+          levelName: getLevelName(survey, s.attainedLevel),
           surveyTitle: survey?.title || 'Unknown Survey',
           surveyLocale: survey?.localle || 'Unknown',
           surveyLocaleText: survey?.localleText || '',
@@ -316,12 +326,9 @@ export async function listDatasetCertificatesData(req, res, next) {
     return next(error);
   }
 }
-export async function findSingleCertificate(req, res, next) {
+
+export async function getSingleCertificateId(datasetId, user) {
   try {
-    const { datasetId } = req.params;
-    const isEmbed = req.embed || false;
-  
-    const user = await getCurrentUser(req);
     const isAdmin = !!user?.admin;
 
     // Resolve dataset by legacy or mongo id
@@ -333,9 +340,7 @@ export async function findSingleCertificate(req, res, next) {
       datasetDoc = await Dataset.findById(datasetId).select('_id').lean();
     }
     if (!datasetDoc) {
-      const error = new Error('Dataset not found');
-      error.status = 404;
-      return next(error);
+      return { certificateId: null, datasetId: null, error: 'Dataset not found' };
     }
 
     const filter = { datasetId: datasetDoc._id };
@@ -357,19 +362,18 @@ export async function findSingleCertificate(req, res, next) {
       .lean();
 
     const published = sets.filter(s => s.state === 'published');
+    
+    // Return the certificate ID if there's exactly one certificate
     if ((user && !isAdmin && sets.length === 1) || (!user && published.length === 1)) {
       const target = (user && !isAdmin) ? sets[0] : published[0];
-      const embedSuffix = isEmbed ? '/embed' : '';
-      return res.redirect(302, `/datasets/${datasetDoc._id}/certificates/${target._id}${embedSuffix}`);
-    }
-    else {
-      return res.redirect(302, `/datasets/${datasetDoc._id}/certificates`);
+      return { certificateId: target._id, datasetId: datasetDoc._id, error: null };
+    } else {
+      // No single certificate found
+      return { certificateId: null, datasetId: datasetDoc._id, error: null };
     }
   } catch (err) {
     console.error('Error finding certificate:', err);
-    const error = new Error('Failed to find certificate');
-    error.status = 500;
-    return next(error);
+    return { certificateId: null, datasetId: null, error: 'Server error' };
   }
 }
 
@@ -426,4 +430,126 @@ export async function deleteCertificate(req, res, next) {
   }
 }
 
+export async function renderCertificateBadge(req, res, next) {
+  try {
+    const { datasetId, responseSetId } = req.params;
 
+    // Find the response set (certificate)
+    const rs = await ResponseSet.findById(responseSetId).lean();
+    if (!rs) {
+      const error = new Error('Certificate not found');
+      error.status = 404;
+      return next(error);
+    }
+
+    // Access control: published certificates are public; otherwise only admin or owner
+    if (rs.state !== 'published') {
+      const user = await getCurrentUser(req);
+      const isOwner = user && String(user._id) === String(rs.userId);
+      if (!(user && (user.admin || isOwner))) {
+        const error = new Error('Forbidden');
+        error.status = 403;
+        return next(error);
+      }
+    }
+
+    // Get the survey to determine level names
+    const survey = await Survey.findById(rs.surveyId).lean();
+    if (!survey) {
+      const error = new Error('Survey not found');
+      error.status = 404;
+      return next(error);
+    }
+
+    // Get the level icon/badge from the survey
+    const levelIndex = rs.attainedLevel ?? 0;
+    const levelIcon = getLevelIcon(survey, levelIndex);
+    console.log(levelIcon);
+    // Construct the path to the badge image
+    const badgePath = `public/${levelIcon}`;
+    
+    // Check if the file exists
+    const fs = await import('fs');
+    const path = await import('path');
+    
+    if (!fs.existsSync(badgePath)) {
+      const error = new Error('Badge image not found');
+      error.status = 404;
+      return next(error);
+    }
+
+    // Set appropriate headers for image serving
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+    
+    // Serve the badge image
+    res.sendFile(path.resolve(badgePath));
+  } catch (err) {
+    console.error('Error rendering certificate badge:', err);
+    const error = new Error('Server error');
+    error.status = 500;
+    return next(error);
+  }
+}
+
+export async function renderCertificateBadgeJs(req, res, next) {
+  try {
+    const { datasetId, responseSetId } = req.params;
+
+    // Find the response set (certificate)
+    const rs = await ResponseSet.findById(responseSetId).lean();
+    if (!rs) {
+      const error = new Error('Certificate not found');
+      error.status = 404;
+      return next(error);
+    }
+
+    // Access control: published certificates are public; otherwise only admin or owner
+    if (rs.state !== 'published') {
+      const user = await getCurrentUser(req);
+      const isOwner = user && String(user._id) === String(rs.userId);
+      if (!(user && (user.admin || isOwner))) {
+        const error = new Error('Forbidden');
+        error.status = 403;
+        return next(error);
+      }
+    }
+
+    // Get the survey to determine level names and certificate title
+    const survey = await Survey.findById(rs.surveyId).lean();
+    if (!survey) {
+      const error = new Error('Survey not found');
+      error.status = 404;
+      return next(error);
+    }
+
+    // Get certificate details
+    const levelIndex = rs.attainedLevel ?? 0;
+    const levelName = getLevelName(survey, levelIndex);
+    const certificateTitle = survey.title || 'Open Data Certificate';
+
+    const dataTitle = rs.responses?.dataTitle?.value || rs.responses?.get('dataTitle') || '';
+
+    const badgeTitle = dataTitle ? `${dataTitle} - ${levelName} - ${certificateTitle}` : `${levelName} - ${certificateTitle}`;
+
+    // Get the base URL for the certificate
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const baseUrl = `${protocol}://${host}`;
+
+    // Construct the JavaScript embed code
+    const jsCode = `document.write('<div class=\\'open-data-certificate\\' title=\\'${badgeTitle}\\'> <style>@import url(${baseUrl}/css/badge.css);<\\/style> <a href="${baseUrl}/datasets/${datasetId}/certificates/${responseSetId}"><img alt="Badge" src="${baseUrl}/datasets/${datasetId}/certificates/${responseSetId}/badge.png" /> <\\/a><p>${levelName}<\\/p> <\\/div>');`;
+
+    // Set appropriate headers for JavaScript serving
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+    
+    // Return the JavaScript code
+    res.send(jsCode);
+  } catch (err) {
+    console.error('Error rendering certificate badge JavaScript:', err);
+    const error = new Error('Server error');
+    error.status = 500;
+    return next(error);
+  }
+}

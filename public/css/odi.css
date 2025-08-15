@@ -22,6 +22,7 @@
     --color-progress-pie-progress: #a5e6b3;
 
     --text-main: var(--color-black);
+    --code: var(--color-dark-blue);
 
     /* Font Family */
     --font-sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -361,6 +362,10 @@ li {
   display: inline-block;
   margin-bottom: 0.5rem;
 }
+tbody tr:nth-child(even) button {
+  background-color: var(--color-dark-blue);
+  color: white !important;
+}
 .btn:hover, button:hover, .submitButton:hover {
   background-color: var(--color-light-grey);
   color: var(--color-dark-blue) !important;
@@ -415,6 +420,9 @@ li {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+code {
+  background-color: inherit !important;
 }
 
 /* Mobile responsive styles */

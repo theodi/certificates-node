@@ -82,7 +82,7 @@ export async function saveResponsesPatch(req, res) {
 }
 
 // POST: publish draft (optional for later)
-export async function publishDraft(req, res) {
+export async function publishCertificate(req, res) {
   const user = await getCurrentUser(req);
   if (!user) return res.status(401).json({ error: 'Unauthorized' });
   const { responseSetId } = req.params;
@@ -96,6 +96,24 @@ export async function publishDraft(req, res) {
     rs.attainedIndex = lvl;
   } catch (_) {}
   rs.state = 'published';
+  await rs.save();
+  return res.json({ ok: true, attainedLevel: rs.attainedLevel });
+}
+
+export async function unpublishCertificate(req, res) {
+  const user = await getCurrentUser(req);
+  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+  const { responseSetId } = req.params;
+  const rs = await ResponseSet.findById(responseSetId);
+  if (!rs) return res.status(404).json({ error: 'Not found' });
+  if (!(user.admin || String(rs.userId) === String(user._id))) return res.status(403).json({ error: 'Forbidden' });
+  try {
+    const survey = await LevelCalculationService.loadSurveyById(rs.surveyId);
+    const lvl = await LevelCalculationService.calculateLevel(rs, survey);
+    rs.attainedLevel = lvl;
+    rs.attainedIndex = lvl;
+  } catch (_) {}
+  rs.state = 'draft';
   await rs.save();
   return res.json({ ok: true, attainedLevel: rs.attainedLevel });
 }
