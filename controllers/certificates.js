@@ -377,6 +377,100 @@ export async function getSingleCertificateId(datasetId, user) {
   }
 }
 
+export async function listDatasetCertificatesFeed(req, res, next) {
+  try {
+    const { datasetId } = req.params;
+    
+    // Parse pagination parameters
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100); // Max 100 per page
+    const cursor = req.query.cursor; // ISO timestamp string
+    const page = parseInt(req.query.page) || 1; // Keep for backward compatibility
+    
+    // Get the dataset
+    const dataset = await Dataset.findById(datasetId).select('_id title url legacyId').lean();
+    if (!dataset) {
+      const error = new Error('Dataset not found');
+      error.status = 404;
+      return next(error);
+    }
+
+    // Build query conditions
+    const queryConditions = { 
+      datasetId: dataset._id, 
+      state: 'published' 
+    };
+    
+    // If cursor provided, use cursor-based pagination
+    if (cursor) {
+      queryConditions.updatedAt = { $lt: new Date(cursor) };
+    }
+
+    // Get all published certificates for this dataset with pagination
+    const certificates = await ResponseSet.find(queryConditions)
+    .select('_id surveyId attainedLevel updatedAt')
+    .sort({ updatedAt: -1 })
+    .limit(limit + 1) // Get one extra to check if there's a next page
+    .lean();
+
+    const hasNext = certificates.length > limit;
+    const certificatesData = certificates.slice(0, limit); // Remove the extra item
+
+    if (certificatesData.length === 0) {
+      const error = new Error('No published certificates found for this dataset');
+      error.status = 404;
+      return next(error);
+    }
+
+    // Fetch survey data for all certificates to get proper level names
+    const surveyIds = [...new Set(certificatesData.map(c => c.surveyId))];
+    const surveys = await Survey.find({ _id: { $in: surveyIds } })
+      .select('_id title localle localleText levels')
+      .lean();
+    
+    const surveyMap = new Map(surveys.map(s => [String(s._id), s]));
+
+    const cap = (s) => (typeof s === 'string' && s.length) ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+
+    const feedData = certificatesData.map(cert => {
+      const survey = surveyMap.get(String(cert.surveyId));
+      return {
+        responseSetId: String(cert._id),
+        levelName: cap(getLevelName(survey, cert.attainedLevel ?? 0)),
+        surveyTitle: survey?.title || 'Certificate',
+        updatedAt: cert.updatedAt
+      };
+    });
+
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    
+    res.set('Content-Type', 'application/atom+xml');
+    // Get the cursor for the next page
+    const nextCursor = hasNext ? certificatesData[certificatesData.length - 1].updatedAt.toISOString() : null;
+    
+    res.render('pages/certificates/feed', { 
+      dataset: {
+        id: String(dataset._id),
+        dataTitle: dataset.title,
+        webpage: dataset.url
+      },
+      certificates: feedData, 
+      baseUrl,
+      pagination: {
+        page,
+        limit,
+        hasNext,
+        hasPrev: page > 1,
+        nextCursor,
+        currentCursor: cursor
+      }
+    });
+  } catch (err) {
+    console.error('Error generating dataset certificates RSS feed:', err);
+    const error = new Error('Failed to generate feed');
+    error.status = 500;
+    return next(err);
+  }
+}
 // List certificates for a dataset
 export async function listDatasetCertificatesPage(req, res, next) {
   try {

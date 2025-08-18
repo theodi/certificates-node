@@ -134,12 +134,98 @@ export async function listPublicDatasetsData(req, res, next) {
   }
 }
 
-export async function listDatasetCertificatesPage(req, res) {
-  const page = { title: 'Dataset Certificates', link: '/datasets' };
-  res.locals.page = page;
-  res.locals.datasetId = req.params.id;
-  res.render('pages/datasets/dataset');
+export async function listPublicDatasetsFeed(req, res, next) {
+  try {
+    // Parse pagination parameters
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100); // Max 100 per page
+    const cursor = req.query.cursor; // ISO timestamp string
+    const page = parseInt(req.query.page) || 1; // Keep for backward compatibility
+
+    // Build match conditions
+    const matchConditions = { state: 'published' };
+    
+    // If cursor provided, use cursor-based pagination
+    if (cursor) {
+      matchConditions.latestUpdatedAt = { $lt: new Date(cursor) };
+    }
+
+    // Aggregate datasets that have at least one published response set
+    const grouped = await ResponseSet.aggregate([
+      { $match: { state: 'published' } },
+      { $group: {
+          _id: '$datasetId',
+          pubCount: { $sum: 1 },
+          latestUpdatedAt: { $max: '$updatedAt' },
+          maxLevel: { $max: '$attainedLevel' },
+          surveyIds: { $addToSet: '$surveyId' }
+      }},
+      { $sort: { latestUpdatedAt: -1 } },
+      ...(cursor ? [] : [{ $skip: (page - 1) * limit }]), // Only use skip for backward compatibility
+      { $limit: limit + 1 } // Get one extra to check if there's a next page
+    ]);
+
+    const hasNext = grouped.length > limit;
+    const groupedData = grouped.slice(0, limit); // Remove the extra item
+
+    const datasetIdToAgg = new Map(groupedData.map(g => [String(g._id), g]));
+    const datasetIds = groupedData.map(g => g._id);
+    const datasets = await Dataset.find({ _id: { $in: datasetIds }, removed: { $ne: true } })
+      .select('_id title url legacyId updatedAt')
+      .lean();
+
+    // Fetch survey data for all response sets to get proper level names
+    const allSurveyIds = [...new Set(grouped.flatMap(g => g.surveyIds))];
+    const surveys = await Survey.find({ _id: { $in: allSurveyIds } })
+      .select('_id title localle localleText levels')
+      .lean();
+    
+    const surveyMap = new Map(surveys.map(s => [String(s._id), s]));
+
+    const cap = (s) => (typeof s === 'string' && s.length) ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+
+    const feedData = datasets.map(ds => {
+      const agg = datasetIdToAgg.get(String(ds._id));
+      // For now, use the first survey found for this dataset (could be enhanced to show multiple)
+      const firstSurveyId = agg?.surveyIds?.[0];
+      const survey = firstSurveyId ? surveyMap.get(String(firstSurveyId)) : null;
+      
+      return {
+        id: String(ds._id),
+        legacyId: ds.legacyId || null,
+        dataTitle: ds.title,
+        webpage: ds.url,
+        levelName: cap(getLevelName(survey, agg?.maxLevel ?? 0)),
+        surveyTitle: survey?.title || 'Certificate',
+        updatedAt: agg?.latestUpdatedAt || ds.updatedAt
+      };
+    });
+
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    
+    res.set('Content-Type', 'application/atom+xml');
+    // Get the cursor for the next page
+    const nextCursor = hasNext ? groupedData[groupedData.length - 1].latestUpdatedAt.toISOString() : null;
+    
+    res.render('pages/datasets/feed', { 
+      datasets: feedData, 
+      baseUrl,
+      pagination: {
+        page,
+        limit,
+        hasNext,
+        hasPrev: page > 1,
+        nextCursor,
+        currentCursor: cursor
+      }
+    });
+  } catch (err) {
+    console.error('Error generating RSS feed:', err);
+    const error = new Error('Failed to generate feed');
+    error.status = 500;
+    return next(error);
+  }
 }
+
 // Middleware for per-resource access if needed later
 export async function ensureAdminOrOwner(req, res, next) {
   try {

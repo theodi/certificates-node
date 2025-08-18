@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <author>
+    <name><%= dataset.ownerName || 'Open Data Certificate' %></name>
+  </author>
+  <updated><%= new Date().toISOString() %></updated>
+  <id><%= baseUrl %>/datasets/<%= dataset.id %>.feed<%= pagination && pagination.page > 1 ? `?page=${pagination.page}` : '' %></id>
+  <title><%= dataset.dataTitle || 'Untitled Dataset' %><%= pagination && pagination.page > 1 ? ` (Page ${pagination.page})` : '' %></title>
+  <link href="<%= baseUrl %>/datasets/<%= dataset.id %>.feed<%= pagination && pagination.page > 1 ? `?page=${pagination.page}` : '' %>" rel="self" protocol="https"/>
+  <% if (pagination && pagination.hasNext) { %>
+  <link href="<%= baseUrl %>/datasets/<%= dataset.id %>.feed?cursor=<%= pagination.nextCursor %>&limit=<%= pagination.limit %>" rel="next" type="application/atom+xml"/>
+  <% } %>
+  <% if (pagination && pagination.hasPrev) { %>
+  <link href="<%= baseUrl %>/datasets/<%= dataset.id %>.feed?page=<%= pagination.page - 1 %>&limit=<%= pagination.limit %>" rel="previous" type="application/atom+xml"/>
+  <% } %>
+  <% certificates.forEach(function(certificate) { %>
+  <entry>
+    <link href="<%= baseUrl %>/datasets/<%= dataset.id %>/certificates/<%= certificate.responseSetId %>"/>
+    <title><%= dataset.dataTitle || 'Untitled Dataset' %> Certificate</title>
+    <content><%= certificate.levelName %> Level <%= certificate.surveyTitle %></content>
+    <updated><%= new Date(certificate.updatedAt).toISOString() %></updated>
+    <id><%= baseUrl %>/datasets/<%= dataset.id %>/certificates/<%= certificate.responseSetId %></id>
+    <link href="<%= baseUrl %>/datasets/<%= dataset.id %>"/>
+    <link rel="http://schema.theodi.org/certificate#certificate" type="text/html" href="<%= baseUrl %>/datasets/<%= dataset.id %>/certificates/<%= certificate.responseSetId %>"/>
+    <% if (dataset.webpage) { %>
+    <link rel="about" href="<%= dataset.webpage %>"/>
+    <% } %>
+    <link rel="alternate" type="application/json" href="<%= baseUrl %>/datasets/<%= dataset.id %>/certificates/<%= certificate.responseSetId %>.json"/>
+    <link rel="http://schema.theodi.org/certificate#badge" type="text/html" href="<%= baseUrl %>/datasets/<%= dataset.id %>/certificates/<%= certificate.responseSetId %>/badge.html"/>
+    <link rel="http://schema.theodi.org/certificate#badge" type="application/javascript" href="<%= baseUrl %>/datasets/<%= dataset.id %>/certificates/<%= certificate.responseSetId %>/badge.js"/>
+  </entry>
+  <% }); %>
+</feed>

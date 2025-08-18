@@ -28,13 +28,19 @@ export async function getSurveyJson(req, res) {
 
 // GET JSON: response set data for prefill
 export async function getResponseSetJson(req, res) {
-  const user = await getCurrentUser(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
   const { responseSetId } = req.params;
   const rs = await ResponseSet.findById(responseSetId).lean();
   if (!rs) return res.status(404).json({ error: 'Not found' });
-  const isOwner = String(rs.userId) === String(user._id) || user.admin;
-  if (!isOwner) return res.status(403).json({ error: 'Forbidden' });
+  // Access control: published certificates are public; otherwise only admin or owner
+  if (rs.state !== 'published') {
+    const user = await getCurrentUser(req);
+    const isOwner = user && String(user._id) === String(rs.userId);
+    if (!(user && (user.admin || isOwner))) {
+      const error = new Error('Forbidden');
+      error.status = 403;
+      return next(error);
+    }
+  }
   return res.json({
     _id: String(rs._id),
     datasetId: String(rs.datasetId),

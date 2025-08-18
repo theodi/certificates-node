@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
+  <author>
+    <name>ODI Certificates</name>
+  </author>
+  <updated><%= new Date().toISOString() %></updated>
+  <id><%= baseUrl %>/datasets<%= pagination && pagination.page > 1 ? `?page=${pagination.page}` : '' %></id>
+  <title>Certified Datasets<%= pagination && pagination.page > 1 ? ` (Page ${pagination.page})` : '' %></title>
+  <link href="<%= baseUrl %>/datasets<%= pagination && pagination.page > 1 ? `?page=${pagination.page}` : '' %>" rel="self" protocol="https"/>
+  <% if (pagination && pagination.hasNext) { %>
+  <link href="<%= baseUrl %>/datasets?cursor=<%= pagination.nextCursor %>&limit=<%= pagination.limit %>" rel="next" type="application/atom+xml"/>
+  <% } %>
+  <% if (pagination && pagination.hasPrev) { %>
+  <link href="<%= baseUrl %>/datasets?page=<%= pagination.page - 1 %>&limit=<%= pagination.limit %>" rel="previous" type="application/atom+xml"/>
+  <% } %>
+  <% datasets.forEach(function(dataset) { %>
+  <entry>
+    <link href="<%= baseUrl %>/datasets/<%= dataset.id %>/certificate"/>
+    <title><%= dataset.dataTitle || 'Untitled Dataset' %> Certificate</title>
+    <content><%= dataset.levelName %> Level <%= dataset.surveyTitle %></content>
+    <updated><%= new Date(dataset.updatedAt).toISOString() %></updated>
+    <id><%= baseUrl %>/datasets/<%= dataset.id %></id>
+    <link href="<%= baseUrl %>/datasets/<%= dataset.id %>"/>
+    <link rel="http://schema.theodi.org/certificate#certificate" type="text/html" href="<%= baseUrl %>/datasets/<%= dataset.id %>/certificate"/>
+    <% if (dataset.webpage) { %>
+    <link rel="about" href="<%= dataset.webpage %>"/>
+    <% } %>
+    <link rel="alternate" type="application/json" href="<%= baseUrl %>/datasets/<%= dataset.id %>/certificate.json"/>
+    <link rel="http://schema.theodi.org/certificate#badge" type="text/html" href="<%= baseUrl %>/datasets/<%= dataset.id %>/certificate/badge.html"/>
+    <link rel="http://schema.theodi.org/certificate#badge" type="application/javascript" href="<%= baseUrl %>/datasets/<%= dataset.id %>/certificate/badge.js"/>
+  </entry>
+  <% }); %>
+</feed>

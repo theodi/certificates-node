@@ -81,6 +81,50 @@ app.use(express.static(__dirname + '/public')); // Public directory
 // Auth routes
 app.use('/auth', authRoutes);
 app.use('/about', aboutRouter);
+// Extension-based routes for datasets (must come before the main datasets router)
+app.get('/datasets.json', (req, res, next) => {
+  req.url = '/datasets';
+  req.headers.accept = 'application/json';
+  return datasetsRouter(req, res, next);
+});
+app.get('/datasets.html', (req, res, next) => {
+  req.url = '/datasets';
+  req.headers.accept = 'text/html';
+  return datasetsRouter(req, res, next);
+});
+app.get('/datasets.feed', (req, res, next) => {
+  req.url = '/datasets';
+  req.headers.accept = 'application/atom+xml';
+  return datasetsRouter(req, res, next);
+});
+app.get('/datasets.rss', (req, res, next) => {
+  req.url = '/datasets';
+  req.headers.accept = 'application/rss+xml';
+  return datasetsRouter(req, res, next);
+});
+app.get('/datasets.xml', (req, res, next) => {
+  req.url = '/datasets';
+  req.headers.accept = 'application/atom+xml';
+  return datasetsRouter(req, res, next);
+});
+
+// Extension-based routes for individual datasets (must come before the main datasets router)
+app.get('/datasets/:datasetId.feed', (req, res, next) => {
+  req.url = `/datasets/${req.params.datasetId}/certificates`;
+  req.headers.accept = 'application/atom+xml';
+  return datasetsRouter(req, res, next);
+});
+app.get('/datasets/:datasetId.rss', (req, res, next) => {
+  req.url = `/datasets/${req.params.datasetId}/certificates`;
+  req.headers.accept = 'application/rss+xml';
+  return datasetsRouter(req, res, next);
+});
+app.get('/datasets/:datasetId.xml', (req, res, next) => {
+  req.url = `/datasets/${req.params.datasetId}/certificates`;
+  req.headers.accept = 'application/atom+xml';
+  return datasetsRouter(req, res, next);
+});
+
 app.use('/datasets', datasetsRouter);
 app.use('/surveys', surveysRouter);
 app.use('/', redirectsRouter);
