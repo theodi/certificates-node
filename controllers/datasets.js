@@ -147,8 +147,8 @@ export async function createDraftResponseSet(req, res, next) {
 
     // Prefill minimal responses for dataset metadata commonly used
     const prefill = new Map();
-    prefill.set('webpage', { value: dataset.url, valueType: 'text' });
-    prefill.set('dataTitle', { value: dataset.title, valueType: 'text' });
+    prefill.set('webpage', dataset.url);
+    prefill.set('dataTitle', dataset.title);
 
     // Optionally copy answers from an existing certificate
     if (copyFrom) {
@@ -157,9 +157,8 @@ export async function createDraftResponseSet(req, res, next) {
         if (existing && existing.responses) {
           const entries = existing.responses instanceof Map ? Array.from(existing.responses.entries()) : Object.entries(existing.responses);
           for (const [k, v] of entries) {
-            if (!prefill.has(k) && v && typeof v === 'object') {
-              const value = v.value ?? v.textValue ?? v.stringValue ?? v.choiceRef ?? undefined;
-              if (typeof value !== 'undefined') prefill.set(k, { value, valueType: v.valueType || 'text', choiceRef: v.choiceRef });
+            if (!prefill.has(k) && v !== null && v !== undefined) {
+              prefill.set(k, v);
             }
           }
         }

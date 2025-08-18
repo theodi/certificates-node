@@ -96,3 +96,14 @@
     border-radius: 4px;
     line-height: 1.5;
 }
+.sd-action {
+    background: var(--color-dark-blue) !important;
+    border-radius: 0 !important;
+}
+.sd-action:hover {
+    background: var(--color-light-grey) !important;
+    color: var(--color-dark-blue) !important;
+}
+.sd-paneldynamic .sd-panel__header {
+    display: none;
+}

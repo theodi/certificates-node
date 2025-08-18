@@ -50,16 +50,17 @@
              const isAdmin = <%- JSON.stringify(user && user.admin) || false %>;
              if (isLoggedIn) {
                const deleteLink = `<button class="button btn btn-danger" onclick="deleteCertificate('${datasetId}','${row.id}', '${row.level}')">Delete</button>`;
+               const editLink = '<a class="button btn" href="/datasets/' + datasetId + '/certificates/' + row.id + '/edit">Edit</a>';
                const publishLink = `<button class="button btn btn-success" onclick="publishCertificate('${datasetId}','${row.id}', '${row.level}')">Publish</button>`;
                const unpublishLink = `<button class="button btn btn-warning" onclick="unpublishCertificate('${datasetId}','${row.id}', '${row.level}')">Unpublish</button>`;
                let actions = `${viewLink} ${deleteLink}`;
                if (isAdmin) {
                  actions = `${viewLink} ${publishLink} ${unpublishLink} ${deleteLink}`;
                }
-               console.log(row.state, row.level);
-               if (row.state === 'draft' && row.level > 0) {
-                 const editLink = '<a class="button btn" href="/datasets/' + datasetId + '/certificates/' + row.id + '/edit">Edit</a>';
+               if (row.level > 0 && row.state === 'draft') {
                  actions = viewLink + ' ' + editLink + ' ' + publishLink + ' ' + deleteLink;
+               } else if (row.state === 'draft') {
+                 actions = viewLink + ' ' + editLink + ' ' + deleteLink;
                } else if (row.state === 'published') {
                  actions = viewLink + ' ' + unpublishLink;
                }

@@ -134,7 +134,7 @@ export async function renderCertificate(req, res, next) {
 
     const getResponseValue = (name) => {
       const r = rs.responses?.[name] || (rs.responses?.get && rs.responses.get(name));
-      return r?.value ?? r?.stringValue ?? r?.textValue ?? r?.choiceRef ?? null;
+      return r ?? null;
     };
     const getEntriesFor = (name) => {
       const el = elementByName[name] || { type: 'text' };
@@ -170,7 +170,7 @@ export async function renderCertificate(req, res, next) {
         // Respect display flag for certificate
         if (el.displayOnCertificate === false) return null;
         const response = rs.responses?.[el.name] || (rs.responses?.get && rs.responses.get(el.name));
-        const value = response?.value ?? response?.stringValue ?? response?.textValue ?? response?.choiceRef ?? null;
+        const value = response ?? null;
         const answers = resolveAnswerEntries(el, value, preferredLocale);
         // Choose certificate-specific title when available
         const titleForCert = localizedText(el.certificateTitle, preferredLocale) || localizedText(el.title, preferredLocale);
@@ -188,7 +188,7 @@ export async function renderCertificate(req, res, next) {
     // Summary fields from responses
     const get = (key) => {
       const r = rs.responses?.[key] || (rs.responses?.get && rs.responses.get(key));
-      return r?.value ?? r?.stringValue ?? r?.textValue ?? r?.choiceRef ?? '';
+      return r ?? '';
     };
     const dataTitle = get('dataTitle');
     const publisher = get('publisher');
@@ -622,7 +622,7 @@ export async function renderCertificateBadgeJs(req, res, next) {
     const levelName = getLevelName(survey, levelIndex);
     const certificateTitle = survey.title || 'Open Data Certificate';
 
-    const dataTitle = rs.responses?.dataTitle?.value || rs.responses?.get('dataTitle') || '';
+    const dataTitle = rs.responses?.dataTitle || (rs.responses?.get && rs.responses.get('dataTitle')) || '';
 
     const badgeTitle = dataTitle ? `${dataTitle} - ${levelName} - ${certificateTitle}` : `${levelName} - ${certificateTitle}`;
 

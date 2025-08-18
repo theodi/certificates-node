@@ -173,7 +173,7 @@ class LevelCalculationService {
     let r = null;
     if (typeof map.get === 'function') r = map.get(questionId);
     else if (typeof map === 'object') r = map[questionId];
-    return r && (r.value ?? r.stringValue ?? r.textValue ?? r.choiceRef ?? null);
+    return r ?? null;
   }
 
   static hasResponse(responseSet, questionId) {

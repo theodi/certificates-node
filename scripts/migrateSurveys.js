@@ -290,7 +290,7 @@ class SurveyMigration {
           SELECT id, text, short_text, help_text, reference_identifier, display_order, 
                  display_type, is_requirement, corresponding_requirements, required,
                  help_text_more_url, text_as_statement, display_on_certificate, pick,
-                 answer_corresponding_to_requirement_id
+                 answer_corresponding_to_requirement_id, question_group_id
          FROM questions 
          WHERE survey_section_id = ?
          ORDER BY display_order
@@ -329,6 +329,7 @@ class SurveyMigration {
           console.log(`    reference_identifier: ${question.reference_identifier}`);
           console.log(`    display_type: ${question.display_type}`);
           console.log(`    pick: ${question.pick}`);
+          console.log(`    question_group_id: ${question.question_group_id}`);
           console.log(`    text: ${question.text?.substring(0, 50)}...`);
         }
 
@@ -447,6 +448,36 @@ class SurveyMigration {
       };
     }
 
+    // Handle dynamic panels (text[] questions)
+    if (element.type === 'paneldynamic') {
+      // Configure dynamic panel properties
+      element.templateTitle = {
+        default: question.text || question.short_text
+      };
+      element.templateElements = [
+        {
+          type: 'text',
+          name: 'item',
+          title: {
+            default: 'Item'
+          },
+          isRequired: true
+        }
+      ];
+      element.minPanelCount = 1;
+      element.maxPanelCount = 10; // Allow up to 10 items
+      element.panelAddText = {
+        default: 'Add another item'
+      };
+      element.panelRemoveText = {
+        default: 'Remove'
+      };
+      
+      if (this.verbose) {
+        console.log(`    Created dynamic panel for question_group_id: ${question.question_group_id}`);
+      }
+    }
+    
     // Add input type for text questions
     if (element.type === 'text' && question.display_type) {
       element.inputType = question.display_type;
@@ -559,6 +590,11 @@ class SurveyMigration {
   }
 
   determineQuestionType(question, answers) {
+    // Check if this is a dynamic panel (text[] question)
+    if (question.question_group_id) {
+      return 'paneldynamic';
+    }
+    
     // Determine question type based on pick field
     if (question.pick === 'one') {
       // Single choice question - use radiogroup

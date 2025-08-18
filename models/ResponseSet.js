@@ -1,23 +1,8 @@
 import mongoose from 'mongoose';
 
-const responseSchema = new mongoose.Schema({
-  // Unified value captured from legacy typed columns or from choice answer ref
-  value: mongoose.Schema.Types.Mixed,
-  valueType: {
-    type: String, // one of: text|string|integer|float|datetime|choice|null
-  },
-  // For choice questions, the chosen answer's reference_identifier (or text fallback)
-  choiceRef: String,
-  explanation: String, // For URL validation failures
-  autocompleted: {
-    type: Boolean,
-    default: false
-  },
-  error: {
-    type: Boolean,
-    default: false
-  }
-}, { _id: false });
+// No schema needed - responses will be stored as direct key-value pairs
+// Single values: key -> value
+// Multiple values: key -> [value1, value2, ...]
 
 const responseSetSchema = new mongoose.Schema({
   legacyId: {
@@ -60,7 +45,7 @@ const responseSetSchema = new mongoose.Schema({
   },
   responses: {
     type: Map,
-    of: responseSchema,
+    of: mongoose.Schema.Types.Mixed,
     default: new Map()
   },
   attainedLevel: {
@@ -106,8 +91,8 @@ responseSetSchema.methods.getResponse = function(questionIdentifier) {
   return this.responses.get(questionIdentifier);
 };
 
-responseSetSchema.methods.setResponse = function(questionIdentifier, responseData) {
-  this.responses.set(questionIdentifier, responseData);
+responseSetSchema.methods.setResponse = function(questionIdentifier, value) {
+  this.responses.set(questionIdentifier, value);
   return this;
 };
 
@@ -116,12 +101,7 @@ responseSetSchema.methods.hasResponse = function(questionIdentifier) {
 };
 
 responseSetSchema.methods.getResponseValue = function(questionIdentifier) {
-  const response = this.getResponse(questionIdentifier);
-  if (!response) return null;
-  // Prefer unified value; fallback to legacy fields if present
-  if (typeof response.value !== 'undefined') return response.value;
-  return response.textValue || response.stringValue || response.integerValue ||
-         response.floatValue || response.datetimeValue || response.choiceRef || null;
+  return this.responses.get(questionIdentifier);
 };
 
 responseSetSchema.methods.isComplete = function() {

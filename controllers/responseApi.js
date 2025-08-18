@@ -1,7 +1,9 @@
 import ResponseSet from '../models/ResponseSet.js';
 import Survey from '../models/Survey.js';
+import Dataset from '../models/Dataset.js';
 import { getCurrentUser } from './responseSets.js';
 import LevelCalculationService from '../services/levelCalculationService.js';
+import { getLevelName } from '../utils/levels.js';
 
 // GET JSON: survey definition by id
 export async function getSurveyJson(req, res) {
@@ -26,30 +28,73 @@ export async function getSurveyJson(req, res) {
   });
 }
 
-// GET JSON: response set data for prefill
-export async function getResponseSetJson(req, res) {
-  const { responseSetId } = req.params;
-  const rs = await ResponseSet.findById(responseSetId).lean();
-  if (!rs) return res.status(404).json({ error: 'Not found' });
-  // Access control: published certificates are public; otherwise only admin or owner
-  if (rs.state !== 'published') {
-    const user = await getCurrentUser(req);
-    const isOwner = user && String(user._id) === String(rs.userId);
-    if (!(user && (user.admin || isOwner))) {
-      const error = new Error('Forbidden');
-      error.status = 403;
-      return next(error);
+// GET JSON: concise certificate format for public API
+export async function getCertificateJson(req, res, next) {
+  try {
+    const { responseSetId } = req.params;
+    const rs = await ResponseSet.findById(responseSetId).lean();
+    if (!rs) return res.status(404).json({ error: 'Certificate not found' });
+    
+    // Access control: published certificates are public; otherwise only admin or owner
+    if (rs.state !== 'published') {
+      const user = await getCurrentUser(req);
+      const isOwner = user && String(user._id) === String(rs.userId);
+      if (!(user && (user.admin || isOwner))) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
     }
+
+    // Get survey and dataset data
+    const [survey, dataset] = await Promise.all([
+      Survey.findById(rs.surveyId).lean(),
+      Dataset.findById(rs.datasetId).lean()
+    ]);
+
+    if (!survey) return res.status(404).json({ error: 'Survey not found' });
+    if (!dataset) return res.status(404).json({ error: 'Dataset not found' });
+
+    // Get base URL for badge links
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const baseUrl = `${protocol}://${host}`;
+    const certificateUri = `${baseUrl}/datasets/${rs.datasetId}/certificates/${rs._id}`;
+    const datasetUri = `${baseUrl}/datasets/${rs.datasetId}`;
+    const surveyUri = `${baseUrl}/surveys/${rs.surveyId}`;
+
+    const certificateJson = {
+      version: 0.1,
+      license: "http://opendatacommons.org/licenses/odbl/",
+      certificate: {
+        title: `${survey.title} for ${rs.responses?.dataTitle || dataset.title || 'Untitled Dataset'}`,
+        uri: certificateUri,
+        jurisdiction: survey.localle?.toUpperCase?.() || 'GB',
+        status: survey.status || 'alpha',
+        certification_type: "self certified",
+        attainedLevel: rs.attainedLevel,
+        levelName: getLevelName(survey, rs.attainedLevel),
+        badges: {
+          "application/javascript": `${certificateUri}/badge.js`,
+          "text/html": `${certificateUri}/badge.html`,
+          "image/png": `${certificateUri}/badge.png`
+        },
+        survey: {
+          uri: surveyUri,
+          title: survey.title,
+        },
+        dataset: {
+          uri: datasetUri,
+          title: dataset.title,
+          webpage: dataset.url,
+          ...rs.responses
+        }
+      }
+    };
+
+    return res.json(certificateJson);
+  } catch (err) {
+    console.error('Error generating certificate JSON:', err);
+    return res.status(500).json({ error: 'Internal server error' });
   }
-  return res.json({
-    _id: String(rs._id),
-    datasetId: String(rs.datasetId),
-    surveyId: String(rs.surveyId),
-    state: rs.state,
-    locale: rs.locale,
-    attainedLevel: rs.attainedLevel,
-    responses: rs.responses || {}
-  });
 }
 
 // PATCH JSON: partial save answers
@@ -64,11 +109,11 @@ export async function saveResponsesPatch(req, res) {
   if (!rs.canModify()) return res.status(409).json({ error: 'Not editable' });
 
   if (responses && typeof responses === 'object') {
-    // responses is a flat map of name -> { value }
-    for (const [name, payload] of Object.entries(responses)) {
-      if (!payload || typeof payload !== 'object') continue;
-      const value = payload.value ?? payload.textValue ?? payload.stringValue ?? payload.choiceRef ?? null;
-      rs.setResponse(name, { value, valueType: payload.valueType || 'text', choiceRef: payload.choiceRef || undefined });
+    // responses is a flat map of name -> value
+    for (const [name, value] of Object.entries(responses)) {
+      if (value !== null && value !== undefined) {
+        rs.setResponse(name, value);
+      }
     }
   }
   // Recalculate level/progress using current survey

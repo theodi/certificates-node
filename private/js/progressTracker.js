@@ -16,6 +16,8 @@ export function calculateProgress(schemaQuestions, data, certProgress, selectedL
         handleChoices(question, answer, certProgress, getText);
       } else if (question.type === 'boolean' || question.type === 'text' || question.type === 'comment') {
         handleSimple(question, answer, certProgress, getText);
+      } else if (question.type === 'paneldynamic') {
+        handleDynamicPanel(question, answer, certProgress, getText);
       }
     });
   
@@ -108,6 +110,21 @@ export function calculateProgress(schemaQuestions, data, certProgress, selectedL
     }
   }
   
+  function handleDynamicPanel(question, answer, certProgress, getText) {
+    // For dynamic panels, check if there are any items added
+    // The answer will be an array of strings
+    const hasItems = Array.isArray(answer) && answer.length > 0 && 
+                    answer.some(item => item && String(item).trim().length > 0);
+    
+    if (question.requirement?.level) {
+      checkRequirement(question.requirement, question.type, hasItems, certProgress, question.name, getText);
+    } else if (Array.isArray(question.requirements) && question.requirements.length) {
+      question.requirements.forEach((req) => {
+        checkRequirement(req, question.type, hasItems, certProgress, question.name, getText);
+      });
+    }
+  }
+  
   function checkRequirement(req, type, answer, certProgress, questionName, getText) {
     const level = req.level;
     let met = false;
@@ -116,6 +133,10 @@ export function calculateProgress(schemaQuestions, data, certProgress, selectedL
       met = req.requireTrue === false
         ? (answer !== undefined && answer !== null)
         : (answer === true);
+    } else if (type === 'paneldynamic') {
+      // For dynamic panels, check if there are any items with content
+      met = Array.isArray(answer) && answer.length > 0 && 
+            answer.some(item => item && String(item).trim().length > 0);
     } else {
       met = Array.isArray(answer)
         ? answer.length > 0

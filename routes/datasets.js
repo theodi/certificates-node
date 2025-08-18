@@ -3,7 +3,7 @@ import { ensureAuthenticated } from '../middleware/auth.js';
 import { listResponseSetsPage, listResponseSetsData, listPublicDatasetsPage, listPublicDatasetsData, listPublicDatasetsFeed, getCurrentUser } from '../controllers/responseSets.js';
 import { renderCertificate, listDatasetCertificatesPage, listDatasetCertificatesFeed, listDatasetCertificatesData, deleteCertificate, renderCertificateBadge, renderCertificateBadgeJs, getSingleCertificateId } from '../controllers/certificates.js';
 import { newDatasetPage, createOrSelectDataset, chooseSurveyPage, chooseSurveyData, createDraftResponseSet, renderEditResponseSetPage, deleteDataset } from '../controllers/datasets.js';
-import { getResponseSetJson, saveResponsesPatch, publishCertificate, unpublishCertificate } from '../controllers/responseApi.js';
+import { getCertificateJson, saveResponsesPatch, publishCertificate, unpublishCertificate } from '../controllers/responseApi.js';
 
 const router = express.Router();
 
@@ -36,14 +36,14 @@ router.get('/:datasetId/certificates/:responseSetId/edit', ensureAuthenticated, 
 
 // Explicit JSON extension route must be BEFORE the generic param route to avoid shadowing
 router.get('/:datasetId/certificates/:responseSetId.json', (req, res, next) => {
-  return getResponseSetJson(req, res, next);
+  return getCertificateJson(req, res, next);
 });
 
 // Editor API/content negotiation on the same resource path
 router.get('/:datasetId/certificates/:responseSetId', (req, res, next) =>
   res.format({
     html: () => renderCertificate(req, res, next),
-    json: () => getResponseSetJson(req, res, next)
+    json: () => getCertificateJson(req, res, next)
   })
 );
 

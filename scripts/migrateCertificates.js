@@ -183,6 +183,14 @@ class CertificateMigration {
         for (const section of surveyDoc.sections) {
           for (const el of (section.elements || [])) {
             if (el && el.name) elementTypeByName[el.name] = el.type || 'text';
+            // Handle dynamic panel template elements
+            if (el.type === 'paneldynamic' && Array.isArray(el.templateElements)) {
+              for (const templateEl of el.templateElements) {
+                if (templateEl && templateEl.name) {
+                  elementTypeByName[templateEl.name] = templateEl.type || 'text';
+                }
+              }
+            }
           }
         }
       }
@@ -204,74 +212,51 @@ class CertificateMigration {
         const elementType = elementTypeByName[elementName] || 'text';
 
         let value = null;
-        let valueType = null;
-        if (responseRow.text_value != null) { value = responseRow.text_value; valueType = 'text'; }
-        else if (responseRow.string_value != null) { value = responseRow.string_value; valueType = 'string'; }
-        else if (responseRow.integer_value != null) { value = responseRow.integer_value; valueType = 'integer'; }
-        else if (responseRow.float_value != null) { value = responseRow.float_value; valueType = 'float'; }
-        else if (responseRow.datetime_value != null) { value = responseRow.datetime_value; valueType = 'datetime'; }
+        if (responseRow.text_value != null) { value = responseRow.text_value; }
+        else if (responseRow.string_value != null) { value = responseRow.string_value; }
+        else if (responseRow.integer_value != null) { value = responseRow.integer_value; }
+        else if (responseRow.float_value != null) { value = responseRow.float_value; }
+        else if (responseRow.datetime_value != null) { value = responseRow.datetime_value; }
 
-        let choiceRef = null;
+        // Handle choice answers
         if (value === null && responseRow.answer_id) {
           const [ans] = await this.mysqlConnection.execute(
             `SELECT reference_identifier, short_text, text FROM answers WHERE id = ? LIMIT 1`,
             [responseRow.answer_id]
           );
           if (ans && ans.length) {
-            choiceRef = ans[0].reference_identifier || ans[0].short_text || ans[0].text || null;
-            value = choiceRef;
-            valueType = 'choice';
+            value = ans[0].reference_identifier || ans[0].short_text || ans[0].text || null;
           }
         }
 
         // Aggregate for multi-select (checkbox) questions
         if (elementType === 'checkbox') {
           const existing = responses.get(elementName);
-          const nextArray = Array.isArray(existing?.value) ? existing.value.slice() : (existing ? [existing.value] : []);
+          const nextArray = Array.isArray(existing) ? existing.slice() : (existing !== null && existing !== undefined ? [existing] : []);
           if (value !== null && typeof value !== 'undefined') nextArray.push(value);
-          responses.set(elementName, {
-            value: nextArray,
-            valueType: 'choice[]',
-            explanation: responseRow.explanation,
-            autocompleted: responseRow.autocompleted || false,
-            error: responseRow.error || false
-          });
+          responses.set(elementName, nextArray);
+        } else if (elementType === 'paneldynamic') {
+          // For dynamic panels, each response becomes a direct value in the array
+          const existing = responses.get(elementName);
+          const nextArray = Array.isArray(existing) ? existing.slice() : [];
+          if (value !== null && typeof value !== 'undefined') {
+            nextArray.push(value);
+          }
+          responses.set(elementName, nextArray);
         } else if (elementType === 'text') {
           // Some text questions can have multiple responses; convert to array if repeated
           const existing = responses.get(elementName);
-          if (existing) {
-            const nextArray = Array.isArray(existing.value)
-              ? existing.value.slice()
-              : (typeof existing.value !== 'undefined' && existing.value !== null
-                  ? [existing.value]
-                  : []);
+          if (existing !== null && existing !== undefined) {
+            const nextArray = Array.isArray(existing)
+              ? existing.slice()
+              : [existing];
             if (value !== null && typeof value !== 'undefined') nextArray.push(value);
-            responses.set(elementName, {
-              value: nextArray,
-              valueType: 'text[]',
-              explanation: responseRow.explanation,
-              autocompleted: responseRow.autocompleted || false,
-              error: responseRow.error || false
-            });
+            responses.set(elementName, nextArray);
           } else {
-            responses.set(elementName, {
-              value,
-              valueType,
-              choiceRef,
-              explanation: responseRow.explanation,
-              autocompleted: responseRow.autocompleted || false,
-              error: responseRow.error || false
-            });
+            responses.set(elementName, value);
           }
         } else {
-          responses.set(elementName, {
-            value,
-            valueType,
-            choiceRef,
-            explanation: responseRow.explanation,
-            autocompleted: responseRow.autocompleted || false,
-            error: responseRow.error || false
-          });
+          responses.set(elementName, value);
         }
       }
 

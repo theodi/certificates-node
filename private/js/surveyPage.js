@@ -93,9 +93,20 @@ import { calculateProgress, navigateToQuestion } from './progressTracker.js';
 
   function extractInitialData(rs) {
     const initialData = {};
-    if (rs?.responses) {
-      for (const [k, v] of Object.entries(rs.responses)) {
-        if (v && typeof v === 'object' && 'value' in v) initialData[k] = v.value;
+    // Check if we have the new structure (dataset contains responses) or old structure (responses directly)
+    const responseData = rs?.certificate?.dataset || rs?.responses;
+    console.log(responseData);
+    if (responseData) {
+      for (const [k, v] of Object.entries(responseData)) {
+        if (v !== null && v !== undefined) {
+          // Convert flattened arrays back to SurveyJS format for dynamic panels
+          if (Array.isArray(v) && v.length > 0 && v.every(item => typeof item === 'string')) {
+            // This might be a dynamic panel - convert to {item: "value"} format
+            initialData[k] = v.map(item => ({ item }));
+          } else {
+            initialData[k] = v;
+          }
+        }
       }
     }
     return initialData;
@@ -125,7 +136,13 @@ import { calculateProgress, navigateToQuestion } from './progressTracker.js';
     let saveTimer = null;
 
     function scheduleSave(name, value) {
-      saveQueue.set(name, { value });
+      // Flatten dynamic panel data from {item: "value"} format to just "value"
+      let processedValue = value;
+      if (Array.isArray(value) && value.length > 0 && value.every(item => item && typeof item === 'object' && 'item' in item)) {
+        processedValue = value.map(item => item.item);
+      }
+      
+      saveQueue.set(name, processedValue);
       if (saveTimer) clearTimeout(saveTimer);
       saveTimer = setTimeout(async () => {
         const payload = { responses: Object.fromEntries(saveQueue.entries()) };
@@ -185,6 +202,7 @@ import { calculateProgress, navigateToQuestion } from './progressTracker.js';
     const questions = [];
     const traverse = (elements) => elements.forEach(el => {
       if ((el.type === 'panel' || el.type === 'paneldynamic') && el.elements) traverse(el.elements);
+      else if (el.type === 'paneldynamic' && el.templateElements) traverse(el.templateElements);
       else if (el.type) questions.push(el);
     });
     schema.pages.forEach(page => page.elements && traverse(page.elements));
