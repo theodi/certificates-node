@@ -24,6 +24,7 @@
               <th>Locale</th>
               <th>Version</th>
               <th>Status</th>
+              <th>Published certificates</th>
               <th>Created</th>
               <th>Actions</th>
             </tr>
@@ -35,6 +36,7 @@
         locale: (it.localleText || it.localle || '').toUpperCase(),
         version: it.version,
         status: it.status,
+        publishedCount: it.publishedCount || 0,
         createdAt: it.createdAt,
         actions: `<a class="button btn" href="/surveys/${it.id}/criteria">View criteria</a>`
       }));
@@ -42,14 +44,16 @@
         data: rows,
         processing: false,
         serverSide: false,
-        searching: false,
+        searching: true,
         ordering: true,
         responsive: true,
+        order: [[3, 'desc']],
         columns: [
           { data: 'locale' },
           { data: 'version' },
           { data: 'status' },
-          { data: 'createdAt', render: (d) => d ? new Date(d).toLocaleString() : '' },
+          { data: 'publishedCount' },
+          { data: 'createdAt', render: (d) => d ? new Date(d).toISOString().slice(0, 10) : '' },
           { data: 'actions', orderable: false, searchable: false }
         ]
       });

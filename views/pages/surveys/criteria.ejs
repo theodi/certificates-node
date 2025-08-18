@@ -8,8 +8,10 @@
     // Use centralized level utilities if available, otherwise fallback
     const getLevelName = (index) => {
       if (survey && survey.levels) {
-        const level = survey.levels.get(String(index));
-        return level?.title || `Level ${index}`;
+        const key = String(index);
+        const lvls = survey.levels;
+        const level = (typeof lvls.get === 'function') ? lvls.get(key) : lvls[key];
+        return (level && level.title) ? level.title : `Level ${index}`;
       }
       // Fallback names
       const fallbackNames = {1: 'Basic', 2: 'Pilot', 3: 'Standard', 4: 'Exemplar'};
@@ -27,7 +29,7 @@
       <ul>
         <% items.forEach(function(it){ %>
           <li>
-            <strong><%= it.sectionTitle %></strong>: <%= it.questionTitle %>
+            <strong><%= it.sectionTitle %></strong>: <%- it.questionTitle %>
             <% if (it.choiceText) { %>
               <div>Choice: <em><%= it.choiceText %></em></div>
             <% } %>

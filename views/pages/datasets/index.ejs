@@ -45,6 +45,7 @@
       searching: true,
       ordering: true,
       responsive: true,
+      order: [[1, 'desc']],
       columns: [
         { data: 'dataTitle', render: (d, t, row) => {
             const url = row.webpage || '#';
@@ -52,7 +53,7 @@
             return url ? `<a href="${url}" target="_blank" rel="noopener">${text}</a>` : text;
           }
         },
-        { data: 'updatedAt', render: (d) => d ? new Date(d).toLocaleString() : '' },
+        { data: 'updatedAt', render: (d) => d ? new Date(d).toISOString().slice(0, 10) : '' },
         { data: 'myCount' },
                  { data: 'actions', render: (d, t, row) => {
              const viewLink = `<a class="button btn" href="/datasets/${row.id}/certificates">View certificates</a>`;

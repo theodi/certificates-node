@@ -18,6 +18,10 @@ class CertificateMigration {
     this.singleMode = config.singleMode || false;
     this.verbose = config.verbose === true || this.singleMode === true;
     this.mysqlConnection = null;
+    this.failures = {
+      datasets: [], // { datasetId, error }
+      responseSets: [] // { datasetId, responseSetId, reason, details }
+    };
   }
 
   async connect() {
@@ -67,7 +71,9 @@ class CertificateMigration {
       SELECT DISTINCT rs.dataset_id AS dataset_id
       FROM certificates c
       JOIN response_sets rs ON c.response_set_id = rs.id
-      WHERE c.aasm_state = 'published' AND rs.dataset_id IS NOT NULL
+      WHERE c.updated_at > '2020-01-01'
+        AND c.name != 'Untitled'
+        AND rs.dataset_id IS NOT NULL
       ORDER BY rs.dataset_id
     `);
     return rows.map(r => r.dataset_id).filter(Boolean);
@@ -85,6 +91,7 @@ class CertificateMigration {
         console.log(`${prefix} Dataset ${datasetId}: done`);
       } catch (err) {
         console.log(`${prefix} Dataset ${datasetId}: failed - ${err?.message || 'unknown error'}`);
+        this.failures.datasets.push({ datasetId, error: err?.message || String(err) });
       }
     }
   }
@@ -138,6 +145,16 @@ class CertificateMigration {
       }
       // Ensure user for this response set
       const rsUserId = await this.ensureUser(row.user_id);
+      if (!rsUserId) {
+        this.failures.responseSets.push({
+          datasetId: legacyDatasetId,
+          responseSetId: row.id,
+          reason: 'missing_user',
+          details: `User ${row.user_id} not found`
+        });
+        if (this.verbose) console.log(`  Skipping response set ${row.id}: user ${row.user_id} not found`);
+        continue;
+      }
 
       // Fetch legacy certificate id for URL preservation
       let legacyCertificateId = null;
@@ -151,6 +168,16 @@ class CertificateMigration {
 
       // Build a quick map of element types from the imported survey
       const surveyDoc = await Survey.findOne({ legacyId: row.survey_id }).select('_id sections').lean();
+      if (!surveyDoc) {
+        this.failures.responseSets.push({
+          datasetId: legacyDatasetId,
+          responseSetId: row.id,
+          reason: 'missing_survey',
+          details: `Survey ${row.survey_id} not imported`
+        });
+        if (this.verbose) console.log(`  Skipping response set ${row.id}: survey ${row.survey_id} not imported`);
+        continue;
+      }
       const elementTypeByName = {};
       if (surveyDoc && Array.isArray(surveyDoc.sections)) {
         for (const section of surveyDoc.sections) {
@@ -253,7 +280,7 @@ class CertificateMigration {
         legacyId: row.id,
         datasetId: datasetDoc._id,
         legacyDatasetId: legacyDatasetId,
-        surveyId: surveyDoc ? surveyDoc._id : null,
+        surveyId: surveyDoc._id,
         userId: rsUserId,
         state: this.mapState(row.aasm_state),
         certificateId: legacyCertificateId,
@@ -266,8 +293,18 @@ class CertificateMigration {
         updatedAt: row.updated_at
       });
 
-      await responseSet.save();
-      this.logMigration('ResponseSet', row.id, responseSet._id);
+      try {
+        await responseSet.save();
+        this.logMigration('ResponseSet', row.id, responseSet._id);
+      } catch (err) {
+        this.failures.responseSets.push({
+          datasetId: legacyDatasetId,
+          responseSetId: row.id,
+          reason: 'save_error',
+          details: err?.message || String(err)
+        });
+        if (this.verbose) console.log(`  Failed to save response set ${row.id}: ${err?.message || err}`);
+      }
     }
   }
 
@@ -322,6 +359,36 @@ class CertificateMigration {
     }
     
     console.log(`\nTotal records migrated: ${this.migrationLog.length}`);
+  }
+
+  printFailures() {
+    const { datasets, responseSets } = this.failures;
+    console.log('\nFailures Summary:');
+    console.log('=================');
+    console.log(`Datasets failed: ${datasets.length}`);
+    if (datasets.length) {
+      for (const f of datasets) {
+        console.log(`  - Dataset ${f.datasetId}: ${f.error}`);
+      }
+    }
+    console.log(`Response sets skipped/failed: ${responseSets.length}`);
+    if (responseSets.length) {
+      // Group by reason for readability
+      const byReason = responseSets.reduce((acc, f) => {
+        acc[f.reason] = acc[f.reason] || [];
+        acc[f.reason].push(f);
+        return acc;
+      }, {});
+      for (const [reason, items] of Object.entries(byReason)) {
+        console.log(`  - ${reason}: ${items.length}`);
+        for (const f of items.slice(0, 50)) { // show first 50 to keep output manageable
+          console.log(`      dataset ${f.datasetId}, response_set ${f.responseSetId}${f.details ? ` - ${f.details}` : ''}`);
+        }
+        if (items.length > 50) {
+          console.log(`      ...and ${items.length - 50} more`);
+        }
+      }
+    }
   }
 }
 
@@ -384,6 +451,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   
   migration.connect()
     .then(() => migration.migrate())
+    .then(() => { migration.printMigrationLog(); migration.printFailures(); })
     .then(() => migration.disconnect())
     .catch(error => {
       console.error('Migration failed:', error);

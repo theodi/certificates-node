@@ -63,7 +63,7 @@ class SurveyMigration {
       }
 
       if (this.singleMode) {
-        const singleId = this.getSingleSurveyId() || 3252;
+        const singleId = this.getSingleSurveyId() || 3162;
         console.log(`Single mode: importing only survey ID ${singleId}`);
         await this.migrateSurveysByIds([singleId]);
       } else {
@@ -230,36 +230,19 @@ class SurveyMigration {
 
     // 1) Surveys with at least one published response set
     const [rsRows] = await this.mysqlConnection.execute(`
-      SELECT 
-        s.id
+      SELECT DISTINCT s.id
       FROM surveys s
-      JOIN response_sets rs 
-        ON s.id = rs.survey_id
-        AND rs.aasm_state = 'published'
-      GROUP BY s.id
+      JOIN response_sets rs ON s.id = rs.survey_id
+      JOIN responses r ON r.response_set_id = rs.id
+      WHERE r.updated_at > '2020-01-01'
+      ORDER BY s.id
     `);
     if (this.verbose) {
-      console.log(`Identified ${rsRows.length} surveys with published response sets`);
+      console.log(`Identified ${rsRows.length} surveys with responses updated after 2020-01-01`);
     }
     addIds(rsRows, 'id');
 
-    // 2) Surveys with published certificates (if not already included)
-    const [certRows] = await this.mysqlConnection.execute(`
-      SELECT 
-        rs.survey_id AS survey_id
-      FROM certificates c
-      JOIN response_sets rs 
-        ON c.response_set_id = rs.id
-      WHERE c.aasm_state = 'published'
-      GROUP BY rs.survey_id
-      ORDER BY COUNT(*) DESC
-    `);
-    if (this.verbose) {
-      console.log(`Identified ${certRows.length} surveys with published certificates`);
-    }
-    addIds(certRows, 'survey_id');
-
-    // 3) Latest versions per title (locale) (if not already included)
+    // 2) Latest versions per title (locale) (if not already included)
     const [latestRows] = await this.mysqlConnection.execute(`
       SELECT s.id
       FROM surveys s

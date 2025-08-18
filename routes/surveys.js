@@ -1,5 +1,4 @@
 import express from 'express';
-import Survey from '../models/Survey.js';
 import { listSurveysPage, listSurveysData, surveyCriteriaPage } from '../controllers/surveys.js';
 import { getSurveyJson } from '../controllers/responseApi.js';
 

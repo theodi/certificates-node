@@ -1,0 +1,30 @@
+Migration Summary:
+==================
+ResponseSet: 584 records migrated
+
+Total records migrated: 584
+
+Failures Summary:
+=================
+Datasets failed: 11
+  - Dataset 222061: Dataset validation failed: url: Path `url` is required.
+  - Dataset 222140: Dataset validation failed: url: Path `url` is required.
+  - Dataset 222292: Dataset validation failed: url: Path `url` is required.
+  - Dataset 222384: Dataset validation failed: url: Path `url` is required.
+  - Dataset 223897: Dataset validation failed: url: Path `url` is required.
+  - Dataset 223906: Dataset validation failed: url: Path `url` is required.
+  - Dataset 224017: Dataset validation failed: url: Path `url` is required.
+  - Dataset 224670: Dataset validation failed: url: Path `url` is required.
+  - Dataset 225811: Dataset validation failed: url: Path `url` is required.
+  - Dataset 226069: Dataset validation failed: url: Path `url` is required.
+  - Dataset 226231: Dataset validation failed: url: Path `url` is required.
+Response sets skipped/failed: 8
+  - missing_survey: 8
+      dataset 706, response_set 6588 - Survey 1049 not imported
+      dataset 706, response_set 6677 - Survey 2712 not imported
+      dataset 8384, response_set 231303 - Survey 3242 not imported
+      dataset 8384, response_set 231307 - Survey 3242 not imported
+      dataset 8384, response_set 231324 - Survey 3242 not imported
+      dataset 24162, response_set 39885 - Survey 2712 not imported
+      dataset 213757, response_set 231540 - Survey 3242 not imported
+      dataset 213757, response_set 231542 - Survey 3242 not imported

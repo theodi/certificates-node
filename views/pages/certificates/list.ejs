@@ -37,12 +37,13 @@
       searching: true,
       ordering: true,
       responsive: true,
+      order: [[4, 'desc']],
       columns: [
         { data: 'state' },
         { data: 'levelName' },
         { data: 'surveyTitle' },
-        { data: 'createdAt', render: (d) => d ? new Date(d).toLocaleString() : '' },
-        { data: 'updatedAt', render: (d) => d ? new Date(d).toLocaleString() : '' },
+        { data: 'createdAt', render: (d) => d ? new Date(d).toISOString().slice(0, 10) : '' },
+        { data: 'updatedAt', render: (d) => d ? new Date(d).toISOString().slice(0, 10) : '' },
                  { data: null, render: (row) => {
              const viewLink = `<a class="button btn" href="/datasets/${datasetId}/certificates/${row.id}" target="_blank" rel="noopener">View</a>`;
              const isLoggedIn = <%- JSON.stringify(!!user) %>;
@@ -86,8 +87,7 @@
       });
 
       if (response.ok) {
-        const result = await response.json();
-        alert('Certificate deleted successfully');        // Reload the table
+        const result = await response.json();      // Reload the table
         table.ajax.reload();
       } else {
         handleError(response);
