@@ -128,8 +128,6 @@ app.get('*', function(req, res, next){
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.log('in error');
-  console.log(err);
   
   // Default status code for unhandled errors
   let statusCode = 500;
