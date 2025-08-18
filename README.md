@@ -159,13 +159,14 @@ The certificate view reads the survey’s `levels` to display the badge and desc
 │   └── Certificate.js
 ├── controllers/            # Web controllers
 │   ├── certificates.js
-│   └── responseSets.js
+│   ├── responseSets.js
+│   └── surveys.js
 ├── services/               # Business logic
 │   └── levelCalculationService.js
 ├── routes/                 # Routes
-│   ├── datasets.js         # Public + My datasets + certificates
+│   ├── datasets.js         # Public + My datasets + certificates (HTML/JSON via content negotiation)
 │   ├── redirects.js        # Legacy redirects (locale-prefixed)
-│   └── surveys.js          # JSON survey endpoint
+│   └── surveys.js          # Surveys index and criteria (HTML) + survey JSON (content negotiation)
 ├── views/                  # EJS templates
 │   ├── pages/
 │   │   ├── datasets/
@@ -251,10 +252,18 @@ npm run migrate:certificates:full          # migrate all datasets with published
 - `GET /auth/*` → Auth routes (login, profile, logout)
 
 ### Legacy route redirects
-- `/:locale/datasets/:datasetId/certificates[...]` → 301 to `/datasets/...`
+- `/:locale/datasets/:datasetId/certificates` → 301 → `/datasets/:datasetId/certificates`
+- `/:locale/datasets/:datasetId/certificates/:responseSetId` → 301 → `/datasets/:datasetId/certificates/:responseSetId`
+- `/:locale/datasets/:datasetId/certificate` → 301 → `/datasets/:datasetId/certificate`
+- `/:locale/datasets/:datasetId/certificate/embed` → 301 → `/datasets/:datasetId/certificate/embed`
+- `/:locale/datasets/:datasetId/certificate/badge.png` → 301 → `/datasets/:datasetId/certificate/badge.png`
+- `/:locale/datasets/:datasetId/certificate/badge.js` → 301 → `/datasets/:datasetId/certificate/badge.js`
+- `/:locale/datasets/` → 301 → `/datasets/`
 
-### JSON survey endpoint
-- `GET /data/survey` → Latest non-alpha survey definition
+### Survey routes (HTML + JSON via content negotiation)
+- `GET /surveys` → Surveys index page (HTML) or grouped latest-per-locale list (JSON)
+- `GET /surveys/:surveyId/criteria` → Survey criteria page (HTML)
+- `GET /surveys/:surveyId` → Survey JSON schema (JSON) or criteria page (HTML)
 
 Note on content negotiation: send `Accept: application/json` to receive JSON; otherwise HTML is rendered.
 
