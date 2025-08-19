@@ -48,8 +48,8 @@ datasetSchema.index({ url: 1 });
 datasetSchema.index({ removed: 1 });
 
 // Virtual for latest response set
-datasetSchema.virtual('latestResponseSet', {
-  ref: 'ResponseSet',
+datasetSchema.virtual('latestCertificate', {
+  ref: 'Certificate',
   localField: '_id',
   foreignField: 'datasetId',
   justOne: true,
@@ -70,14 +70,14 @@ datasetSchema.methods.isVisible = function() {
   return !this.removed && this.publishedCertificate;
 };
 
-datasetSchema.methods.getNewestResponseSet = function() {
-  return this.model('ResponseSet')
+datasetSchema.methods.getNewestCertificate = function() {
+  return this.model('Certificate')
     .findOne({ datasetId: this._id })
     .sort({ createdAt: -1 });
 };
 
-datasetSchema.methods.getNewestCompletedResponseSet = function() {
-  return this.model('ResponseSet')
+datasetSchema.methods.getNewestCompletedCertificate = function() {
+  return this.model('Certificate')
     .findOne({ 
       datasetId: this._id,
       state: { $in: ['published', 'archived'] }

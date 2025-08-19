@@ -1,9 +1,7 @@
 import express from 'express';
 import { ensureAuthenticated } from '../middleware/auth.js';
-import { listResponseSetsPage, listResponseSetsData, listPublicDatasetsPage, listPublicDatasetsData, listPublicDatasetsFeed, getCurrentUser } from '../controllers/responseSets.js';
-import { renderCertificate, listDatasetCertificatesPage, listDatasetCertificatesFeed, listDatasetCertificatesData, deleteCertificate, renderCertificateBadge, renderCertificateBadgeJs, getSingleCertificateId } from '../controllers/certificates.js';
-import { newDatasetPage, createOrSelectDataset, chooseSurveyPage, chooseSurveyData, createDraftResponseSet, renderEditResponseSetPage, deleteDataset } from '../controllers/datasets.js';
-import { getCertificateJson, saveResponsesPatch, publishCertificate, unpublishCertificate } from '../controllers/responseApi.js';
+import { listPublicDatasetsPage, listPublicDatasetsData, listPublicDatasetsFeed, listMyDatasetsPage, listMyDatasetsData, newDatasetPage, createOrSelectDataset, chooseSurveyPage, createDraftCertificate, renderEditCertificatePage, deleteDataset, getCurrentUser } from '../controllers/datasets.js';
+import { renderCertificate, listDatasetCertificatesPage, listDatasetCertificatesFeed, listDatasetCertificatesData, deleteCertificate, renderCertificateBadge, renderCertificateBadgeJs, getSingleCertificateId, getCertificateJson, publishCertificate, unpublishCertificate, saveResponsesPatch } from '../controllers/certificates.js';
 
 const router = express.Router();
 
@@ -20,8 +18,8 @@ router.get('/', (req, res, next) =>
 // My datasets (require auth, content negotiation)
 router.get('/my', ensureAuthenticated, (req, res, next) =>
   res.format({
-    html: () => listResponseSetsPage(req, res, next),
-    json: () => listResponseSetsData(req, res, next)
+    html: () => listMyDatasetsPage(req, res, next),
+    json: () => listMyDatasetsData(req, res, next)
   })
 );
 
@@ -29,37 +27,37 @@ router.get('/my', ensureAuthenticated, (req, res, next) =>
 router.get('/new', ensureAuthenticated, newDatasetPage);
 router.post('/new', ensureAuthenticated, createOrSelectDataset);
 router.get('/:datasetId/new', ensureAuthenticated, chooseSurveyPage);
-router.post('/:datasetId/new', ensureAuthenticated, createDraftResponseSet);
+router.post('/:datasetId/new', ensureAuthenticated, createDraftCertificate);
 router.get('/:datasetId/certificates/new', ensureAuthenticated, chooseSurveyPage);
-router.post('/:datasetId/certificates/new', ensureAuthenticated, createDraftResponseSet);
-router.get('/:datasetId/certificates/:responseSetId/edit', ensureAuthenticated, renderEditResponseSetPage);
+router.post('/:datasetId/certificates/new', ensureAuthenticated, createDraftCertificate);
+router.get('/:datasetId/certificates/:certificateId/edit', ensureAuthenticated, renderEditCertificatePage);
 
 // Explicit JSON extension route must be BEFORE the generic param route to avoid shadowing
-router.get('/:datasetId/certificates/:responseSetId.json', (req, res, next) => {
+router.get('/:datasetId/certificates/:certificateId.json', (req, res, next) => {
   return getCertificateJson(req, res, next);
 });
 
 // Editor API/content negotiation on the same resource path
-router.get('/:datasetId/certificates/:responseSetId', (req, res, next) =>
+router.get('/:datasetId/certificates/:certificateId', (req, res, next) =>
   res.format({
     html: () => renderCertificate(req, res, next),
     json: () => getCertificateJson(req, res, next)
   })
 );
 
-router.get('/:datasetId/certificates/:responseSetId/badge.png', (req, res, next) => {
+router.get('/:datasetId/certificates/:certificateId/badge.png', (req, res, next) => {
   return renderCertificateBadge(req, res, next);
 });
-router.get('/:datasetId/certificates/:responseSetId/badge.js', (req, res, next) => {
+router.get('/:datasetId/certificates/:certificateId/badge.js', (req, res, next) => {
   return renderCertificateBadgeJs(req, res, next);
 });
-router.get('/:datasetId/certificates/:responseSetId/embed', (req, res, next) => {
+router.get('/:datasetId/certificates/:certificateId/embed', (req, res, next) => {
   req.embed = true;
   return renderCertificate(req, res, next);
 });
-router.patch('/:datasetId/certificates/:responseSetId', ensureAuthenticated, saveResponsesPatch);
-router.post('/:datasetId/certificates/:responseSetId/publish', ensureAuthenticated, publishCertificate);
-router.post('/:datasetId/certificates/:responseSetId/unpublish', ensureAuthenticated, unpublishCertificate);
+router.patch('/:datasetId/certificates/:certificateId', ensureAuthenticated, saveResponsesPatch);
+router.post('/:datasetId/certificates/:certificateId/publish', ensureAuthenticated, publishCertificate);
+router.post('/:datasetId/certificates/:certificateId/unpublish', ensureAuthenticated, unpublishCertificate);
 
 // Explicit JSON extension route for certificates list
 router.get('/:datasetId/certificates.json', (req, res, next) => {
@@ -178,7 +176,7 @@ router.get('/:datasetId/certificate/badge.js', async (req, res, next) => {
 
 // Delete routes
 router.delete('/:datasetId', ensureAuthenticated, deleteDataset);
-router.delete('/:datasetId/certificates/:responseSetId', ensureAuthenticated, deleteCertificate);
+router.delete('/:datasetId/certificates/:certificateId', ensureAuthenticated, deleteCertificate);
 
 export default router;
 

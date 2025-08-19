@@ -15,19 +15,19 @@
   <% } %>
   <% certificates.forEach(function(certificate) { %>
   <entry>
-    <link href="<%= baseUrl %>/datasets/<%= dataset.id %>/certificates/<%= certificate.responseSetId %>"/>
+    <link href="<%= baseUrl %>/datasets/<%= dataset.id %>/certificates/<%= certificate.certificateId %>"/>
     <title><%= dataset.dataTitle || 'Untitled Dataset' %> Certificate</title>
     <content><%= certificate.levelName %> Level <%= certificate.surveyTitle %></content>
     <updated><%= new Date(certificate.updatedAt).toISOString() %></updated>
-    <id><%= baseUrl %>/datasets/<%= dataset.id %>/certificates/<%= certificate.responseSetId %></id>
+    <id><%= baseUrl %>/datasets/<%= dataset.id %>/certificates/<%= certificate.certificateId %></id>
     <link href="<%= baseUrl %>/datasets/<%= dataset.id %>"/>
-    <link rel="http://schema.theodi.org/certificate#certificate" type="text/html" href="<%= baseUrl %>/datasets/<%= dataset.id %>/certificates/<%= certificate.responseSetId %>"/>
+    <link rel="http://schema.theodi.org/certificate#certificate" type="text/html" href="<%= baseUrl %>/datasets/<%= dataset.id %>/certificates/<%= certificate.certificateId %>"/>
     <% if (dataset.webpage) { %>
     <link rel="about" href="<%= dataset.webpage %>"/>
     <% } %>
-    <link rel="alternate" type="application/json" href="<%= baseUrl %>/datasets/<%= dataset.id %>/certificates/<%= certificate.responseSetId %>.json"/>
-    <link rel="http://schema.theodi.org/certificate#badge" type="text/html" href="<%= baseUrl %>/datasets/<%= dataset.id %>/certificates/<%= certificate.responseSetId %>/badge.html"/>
-    <link rel="http://schema.theodi.org/certificate#badge" type="application/javascript" href="<%= baseUrl %>/datasets/<%= dataset.id %>/certificates/<%= certificate.responseSetId %>/badge.js"/>
+    <link rel="alternate" type="application/json" href="<%= baseUrl %>/datasets/<%= dataset.id %>/certificates/<%= certificate.certificateId %>.json"/>
+    <link rel="http://schema.theodi.org/certificate#badge" type="text/html" href="<%= baseUrl %>/datasets/<%= dataset.id %>/certificates/<%= certificate.certificateId %>/badge.html"/>
+    <link rel="http://schema.theodi.org/certificate#badge" type="application/javascript" href="<%= baseUrl %>/datasets/<%= dataset.id %>/certificates/<%= certificate.certificateId %>/badge.js"/>
   </entry>
   <% }); %>
 </feed>

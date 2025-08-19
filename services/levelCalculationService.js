@@ -5,17 +5,17 @@ class LevelCalculationService {
   static surveyCache = new Map();
   static DEBUG = (process && process.env && process.env.DEBUG_LEVEL_CALC === 'true');
 
-  static async calculateLevel(responseSet, surveyDoc = null) {
+  static async calculateLevel(certificate, surveyDoc = null) {
     try {
-      const survey = surveyDoc || await this.loadSurveyById(responseSet.surveyId);
+      const survey = surveyDoc || await this.loadSurveyById(certificate.surveyId);
       const { levelNames, maxLevel } = this.getSurveyLevelMeta(survey);
       const requirements = this.extractRequirementsFromSections(survey, levelNames);
       if (this.DEBUG) {
-        console.debug('[LevelCalc] calculateLevel: surveyId=%s reqCount=%d maxLevel=%d', String(responseSet.surveyId), requirements.length, maxLevel);
+        console.debug('[LevelCalc] calculateLevel: surveyId=%s reqCount=%d maxLevel=%d', String(certificate.surveyId), requirements.length, maxLevel);
       }
       for (let level = maxLevel; level >= 1; level -= 1) {
-        console.debug('[LevelCalc] level %d: meetsLevelRequirements=%s', level, await this.meetsLevelRequirements(responseSet, requirements, level));
-        if (await this.meetsLevelRequirements(responseSet, requirements, level)) {
+        console.debug('[LevelCalc] level %d: meetsLevelRequirements=%s', level, await this.meetsLevelRequirements(certificate, requirements, level));
+        if (await this.meetsLevelRequirements(certificate, requirements, level)) {
           if (this.DEBUG) console.debug('[LevelCalc] achieved level %d', level);
           return level;
         }
@@ -27,15 +27,15 @@ class LevelCalculationService {
     }
   }
 
-  static async calculateProgress(responseSet, surveyDoc = null) {
+  static async calculateProgress(certificate, surveyDoc = null) {
     try {
-      const survey = surveyDoc || await this.loadSurveyById(responseSet.surveyId);
+      const survey = surveyDoc || await this.loadSurveyById(certificate.surveyId);
       const { levelNames, maxLevel } = this.getSurveyLevelMeta(survey);
       const requirements = this.extractRequirementsFromSections(survey, levelNames);
       if (this.DEBUG) console.debug('[LevelCalc] calculateProgress: reqCount=%d maxLevel=%d', requirements.length, maxLevel);
       const progress = {
-        currentLevel: Number(responseSet.attainedLevel || 0),
-        currentLevelName: levelNames[Number(responseSet.attainedLevel || 0)] || (levelNames[0] || 'none'),
+        currentLevel: Number(certificate.attainedLevel || 0),
+        currentLevelName: levelNames[Number(certificate.attainedLevel || 0)] || (levelNames[0] || 'none'),
         totalQuestions: 0,
         answeredQuestions: 0,
         requiredQuestions: 0,
@@ -45,7 +45,7 @@ class LevelCalculationService {
       // Cumulative progress: for each level L, consider all requirements with level <= L
       for (let level = 1; level <= maxLevel; level += 1) {
         const levelRequirements = requirements.filter(req => req.level <= level);
-        const levelProgress = await this.calculateLevelProgress(responseSet, levelRequirements);
+        const levelProgress = await this.calculateLevelProgress(certificate, levelRequirements);
         progress.levels.push({
           level,
           levelName: levelNames[level] || String(level),
@@ -167,8 +167,8 @@ class LevelCalculationService {
     return requirements;
   }
 
-  static getResponseValue(responseSet, questionId) {
-    const map = responseSet?.responses;
+  static getResponseValue(certificate, questionId) {
+    const map = certificate?.responses;
     if (!map) return null;
     let r = null;
     if (typeof map.get === 'function') r = map.get(questionId);
@@ -176,15 +176,15 @@ class LevelCalculationService {
     return r ?? null;
   }
 
-  static hasResponse(responseSet, questionId) {
-    const map = responseSet?.responses;
+  static hasResponse(certificate, questionId) {
+    const map = certificate?.responses;
     if (!map) return false;
     if (typeof map.has === 'function') return map.has(questionId);
     if (typeof map === 'object') return Object.prototype.hasOwnProperty.call(map, questionId);
     return false;
   }
 
-  static async meetsLevelRequirements(responseSet, requirements, level) {
+  static async meetsLevelRequirements(certificate, requirements, level) {
     // To achieve level L, all requirements with level <= L must be satisfied
     const levelRequirements = requirements.filter(r => r.level <= level);
     const failures = [];
@@ -199,7 +199,7 @@ class LevelCalculationService {
     }
     
     for (const [questionId, questionRequirements] of requirementsByQuestion) {
-      const actual = this.getResponseValue(responseSet, questionId);
+      const actual = this.getResponseValue(certificate, questionId);
       
       // Check if this question has choice requirements
       const choiceRequirements = questionRequirements.filter(r => r.source === 'choice');
@@ -214,7 +214,7 @@ class LevelCalculationService {
           const { expectedValue, condition, level: reqLevel } = matchingChoiceReq;
           
           // Check applicability first (visibility/condition). If not applicable, skip.
-          if (condition && !this.evaluateCondition(responseSet, condition)) {
+          if (condition && !this.evaluateCondition(certificate, condition)) {
             if (this.DEBUG) console.debug('[LevelCalc] skip choice requirement q=%s due to condition=%o', questionId, condition);
             continue;
           }
@@ -238,7 +238,7 @@ class LevelCalculationService {
         const { expectedValue, condition, elementType, minChoiceLevel, choiceRequiredValues } = requirement;
         
         // Check applicability first (visibility/condition). If not applicable, skip.
-        if (condition && !this.evaluateCondition(responseSet, condition)) {
+        if (condition && !this.evaluateCondition(certificate, condition)) {
           if (this.DEBUG) console.debug('[LevelCalc] skip element requirement q=%s due to condition=%o', questionId, condition);
           continue;
         }
@@ -274,14 +274,14 @@ class LevelCalculationService {
     return failures.length === 0;
   }
 
-  static async meetsRequirement(responseSet, requirement) {
+  static async meetsRequirement(certificate, requirement) {
     const { questionId, expectedValue, condition } = requirement;
-    if (!this.hasResponse(responseSet, questionId)) {
+    if (!this.hasResponse(certificate, questionId)) {
       if (this.DEBUG) console.debug('[LevelCalc] meetsRequirement q=%s -> NO (missing response)', questionId);
       return false;
     }
-    const value = this.getResponseValue(responseSet, questionId);
-    if (condition && !this.evaluateCondition(responseSet, condition)) {
+    const value = this.getResponseValue(certificate, questionId);
+    if (condition && !this.evaluateCondition(certificate, condition)) {
       if (this.DEBUG) console.debug('[LevelCalc] meetsRequirement n/a due to condition: q=%s value=%o cond=%o', questionId, value, condition);
       return true;
     }
@@ -292,15 +292,15 @@ class LevelCalculationService {
     return ok;
   }
 
-  static async calculateLevelProgress(responseSet, levelRequirements) {
+  static async calculateLevelProgress(certificate, levelRequirements) {
     let total = 0, answered = 0, required = 0, answeredRequired = 0;
     for (const requirement of levelRequirements) {
       const { questionId, isRequired, condition } = requirement;
-      if (condition && !this.evaluateCondition(responseSet, condition)) continue;
+      if (condition && !this.evaluateCondition(certificate, condition)) continue;
       total += 1;
       if (isRequired) required += 1;
-      if (this.hasResponse(responseSet, questionId)) {
-        const value = this.getResponseValue(responseSet, questionId);
+      if (this.hasResponse(certificate, questionId)) {
+        const value = this.getResponseValue(certificate, questionId);
         if (value !== null && typeof value !== 'undefined' && String(value).length > 0) {
           answered += 1;
           if (isRequired) answeredRequired += 1;
@@ -310,7 +310,7 @@ class LevelCalculationService {
     return { total, answered, required, answeredRequired };
   }
 
-  static evaluateCondition(responseSet, condition) {
+  static evaluateCondition(certificate, condition) {
     // Accept either parsed object or raw SurveyJS visibleIf string
     if (!condition) return true;
     if (typeof condition === 'string') {
@@ -332,8 +332,8 @@ class LevelCalculationService {
             const varName = m[1];
             const op = m[2];
             const val = m[3];
-            const has = this.hasResponse(responseSet, varName);
-            const actual = has ? this.getResponseValue(responseSet, varName) : undefined;
+            const has = this.hasResponse(certificate, varName);
+            const actual = has ? this.getResponseValue(certificate, varName) : undefined;
             switch (op) {
               case '==': case '=': cur = (actual === val); break;
               case '!=': case '<>': cur = (actual !== val); break;
@@ -350,8 +350,8 @@ class LevelCalculationService {
     }
     const { questionId, operator, value } = condition || {};
     if (!questionId) return true;
-    if (!this.hasResponse(responseSet, questionId)) return false;
-    const responseValue = this.getResponseValue(responseSet, questionId);
+    if (!this.hasResponse(certificate, questionId)) return false;
+    const responseValue = this.getResponseValue(certificate, questionId);
     switch (operator) {
       case '==': case '=': return responseValue === value;
       case '!=': case '<>': return responseValue !== value;

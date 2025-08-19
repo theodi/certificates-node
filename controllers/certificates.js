@@ -1,8 +1,9 @@
-import ResponseSet from '../models/ResponseSet.js';
+import Certificate from '../models/Certificate.js';
 import Survey from '../models/Survey.js';
 import Dataset from '../models/Dataset.js';
-import { getCurrentUser } from './responseSets.js';
-import { getLevelName, getLevelNames, getLevelIcon } from '../utils/levels.js';
+import { getCurrentUser } from './datasets.js';
+import { getLevelName, getLevelIcon } from '../utils/levels.js';
+import LevelCalculationService from '../services/levelCalculationService.js';
 
 function localizedText(val, locale = 'en') {
   if (!val) return '';
@@ -59,11 +60,11 @@ function resolveAnswerEntries(element, responseValue, locale = 'en') {
 
 export async function renderCertificate(req, res, next) {
   try {
-    const { datasetId, responseSetId } = req.params;
+    const { datasetId, certificateId } = req.params;
     const isEmbed = req.embed || false;
 
     // Response set id is required in the new scheme
-    let rs = await ResponseSet.findById(responseSetId).lean();
+    let rs = await Certificate.findById(certificateId).lean();
     if (!rs) {
       const error = new Error('Certificate not found');
       error.status = 404;
@@ -149,7 +150,8 @@ export async function renderCertificate(req, res, next) {
     let datasetDoc = null;
     try { if (rs.datasetId) datasetDoc = await Dataset.findById(rs.datasetId).select('title url').lean(); } catch (_) {}
     const datasetTitleFallback = (datasetDoc && datasetDoc.title) ? [{ text: datasetDoc.title, isLink: false }] : [];
-    const datasetUrlFallback = (datasetDoc && datasetDoc.url) ? [{ text: datasetDoc.url, isLink: true }] : [];
+    const datasetUrl = datasetDoc && datasetDoc.url;
+    console.log('Dataset URL', datasetUrl);
 
     const licenseKeys = ['license', 'licence', 'rights', 'rightsStatement', 'dataLicence'];
     let licenseEntries = [];
@@ -220,7 +222,7 @@ export async function renderCertificate(req, res, next) {
       publisher,
       summary: {
         title: (datasetTitleEntries.length ? datasetTitleEntries : datasetTitleFallback),
-        url: (datasetUrlEntries.length ? datasetUrlEntries : datasetUrlFallback),
+        url: (datasetUrlEntries.length ? datasetUrlEntries : datasetUrl),
         license: licenseEntries,
         releaseType: releaseTypeEntries
       },
@@ -229,10 +231,10 @@ export async function renderCertificate(req, res, next) {
       // Add URL information for embed codes
       baseUrl,
       datasetId,
-      responseSetId
+      certificateId
     };
 
-    const page = { title: dataTitle, link: `/datasets/${datasetId}/certificates/${responseSetId}` };
+    const page = { title: dataTitle, link: `/datasets/${datasetId}/certificates/${certificateId}` };
     res.locals.page = page;
 
     // Choose template based on embed flag
@@ -280,7 +282,7 @@ export async function listDatasetCertificatesData(req, res, next) {
       }
     }
 
-    const sets = await ResponseSet.find(filter)
+    const sets = await Certificate.find(filter)
       .sort({ createdAt: -1 })
       .select('_id state attainedLevel createdAt updatedAt userId surveyId')
       .lean();
@@ -356,7 +358,7 @@ export async function getSingleCertificateId(datasetId, user) {
       }
     }
 
-    const sets = await ResponseSet.find(filter)
+    const sets = await Certificate.find(filter)
       .sort({ createdAt: -1 })
       .select('_id state attainedLevel createdAt updatedAt userId surveyId')
       .lean();
@@ -406,7 +408,7 @@ export async function listDatasetCertificatesFeed(req, res, next) {
     }
 
     // Get all published certificates for this dataset with pagination
-    const certificates = await ResponseSet.find(queryConditions)
+    const certificates = await Certificate.find(queryConditions)
     .select('_id surveyId attainedLevel updatedAt')
     .sort({ updatedAt: -1 })
     .limit(limit + 1) // Get one extra to check if there's a next page
@@ -434,7 +436,7 @@ export async function listDatasetCertificatesFeed(req, res, next) {
     const feedData = certificatesData.map(cert => {
       const survey = surveyMap.get(String(cert.surveyId));
       return {
-        responseSetId: String(cert._id),
+        certificateId: String(cert._id),
         levelName: cap(getLevelName(survey, cert.attainedLevel ?? 0)),
         surveyTitle: survey?.title || 'Certificate',
         updatedAt: cert.updatedAt
@@ -495,17 +497,17 @@ export async function deleteCertificate(req, res, next) {
       return next(error);
     }
 
-    const { responseSetId } = req.params;
-    const responseSet = await ResponseSet.findById(responseSetId);
+    const { certificateId } = req.params;
+    const certificate = await Certificate.findById(certificateId);
     
-    if (!responseSet) {
+    if (!certificate) {
       const error = new Error('Certificate not found');
       error.status = 404;
       return next(error);
     }
 
     // Only the owner or admin can delete a certificate
-    const isOwner = String(responseSet.userId) === String(user._id);
+    const isOwner = String(certificate.userId) === String(user._id);
     if (!(user.admin || isOwner)) {
       const error = new Error('Forbidden');
       error.status = 403;
@@ -513,7 +515,7 @@ export async function deleteCertificate(req, res, next) {
     }
 
     // Delete the response set (which effectively deletes the certificate)
-    await ResponseSet.findByIdAndDelete(responseSet._id);
+    await Certificate.findByIdAndDelete(certificate._id);
     
     return res.json({ success: true, message: 'Certificate deleted successfully' });
   } catch (err) {
@@ -526,10 +528,10 @@ export async function deleteCertificate(req, res, next) {
 
 export async function renderCertificateBadge(req, res, next) {
   try {
-    const { datasetId, responseSetId } = req.params;
+    const { datasetId, certificateId } = req.params;
 
     // Find the response set (certificate)
-    const rs = await ResponseSet.findById(responseSetId).lean();
+    const rs = await Certificate.findById(certificateId).lean();
     if (!rs) {
       const error = new Error('Certificate not found');
       error.status = 404;
@@ -588,10 +590,10 @@ export async function renderCertificateBadge(req, res, next) {
 
 export async function renderCertificateBadgeJs(req, res, next) {
   try {
-    const { datasetId, responseSetId } = req.params;
+    const { datasetId, certificateId } = req.params;
 
     // Find the response set (certificate)
-    const rs = await ResponseSet.findById(responseSetId).lean();
+      const rs = await Certificate.findById(certificateId).lean();
     if (!rs) {
       const error = new Error('Certificate not found');
       error.status = 404;
@@ -632,7 +634,7 @@ export async function renderCertificateBadgeJs(req, res, next) {
     const baseUrl = `${protocol}://${host}`;
 
     // Construct the JavaScript embed code
-    const jsCode = `document.write('<div class=\\'open-data-certificate\\' title=\\'${badgeTitle}\\'> <style>@import url(${baseUrl}/css/badge.css);<\\/style> <a href="${baseUrl}/datasets/${datasetId}/certificates/${responseSetId}"><img alt="Badge" src="${baseUrl}/datasets/${datasetId}/certificates/${responseSetId}/badge.png" /> <\\/a><p>${levelName}<\\/p> <\\/div>');`;
+    const jsCode = `document.write('<div class=\\'open-data-certificate\\' title=\\'${badgeTitle}\\'> <style>@import url(${baseUrl}/css/badge.css);<\\/style> <a href="${baseUrl}/datasets/${datasetId}/certificates/${certificateId}"><img alt="Badge" src="${baseUrl}/datasets/${datasetId}/certificates/${certificateId}/badge.png" /> <\\/a><p>${levelName}<\\/p> <\\/div>');`;
 
     // Set appropriate headers for JavaScript serving
     res.setHeader('Content-Type', 'application/javascript');
@@ -645,5 +647,145 @@ export async function renderCertificateBadgeJs(req, res, next) {
     const error = new Error('Server error');
     error.status = 500;
     return next(error);
+  }
+}
+
+// GET JSON: concise certificate format for public API
+export async function getCertificateJson(req, res, next) {
+  try {
+    const { certificateId } = req.params;
+    const rs = await Certificate.findById(certificateId).lean();
+    if (!rs) return res.status(404).json({ error: 'Certificate not found' });
+    
+    // Access control: published certificates are public; otherwise only admin or owner
+    if (rs.state !== 'published') {
+      const user = await getCurrentUser(req);
+      const isOwner = user && String(user._id) === String(rs.userId);
+      if (!(user && (user.admin || isOwner))) {
+        return res.status(403).json({ error: 'Forbidden' });
+      }
+    }
+
+    // Get survey and dataset data
+    const [survey, dataset] = await Promise.all([
+      Survey.findById(rs.surveyId).lean(),
+      Dataset.findById(rs.datasetId).lean()
+    ]);
+
+    if (!survey) return res.status(404).json({ error: 'Survey not found' });
+    if (!dataset) return res.status(404).json({ error: 'Dataset not found' });
+
+    // Get base URL for badge links
+    const protocol = req.protocol;
+    const host = req.get('host');
+    const baseUrl = `${protocol}://${host}`;
+    const certificateUri = `${baseUrl}/datasets/${rs.datasetId}/certificates/${rs._id}`;
+    const datasetUri = `${baseUrl}/datasets/${rs.datasetId}`;
+    const surveyUri = `${baseUrl}/surveys/${rs.surveyId}`;
+
+    const certificateJson = {
+      version: 0.2,
+      license: "http://opendatacommons.org/licenses/odbl/",
+      certificate: {
+        title: `${survey.title} for ${rs.responses?.dataTitle || dataset.title || 'Untitled Dataset'}`,
+        uri: certificateUri,
+        jurisdiction: survey.localle?.toUpperCase?.() || 'GB',
+        status: survey.status || 'alpha',
+        certification_type: "self certified",
+        attainedLevel: rs.attainedLevel,
+        levelName: getLevelName(survey, rs.attainedLevel),
+        badges: {
+          "application/javascript": `${certificateUri}/badge.js`,
+          "text/html": `${certificateUri}/badge.html`,
+          "image/png": `${certificateUri}/badge.png`
+        },
+        survey: {
+          uri: surveyUri,
+          title: survey.title,
+        },
+        dataset: {
+          uri: datasetUri,
+          title: dataset.title,
+          webpage: dataset.url,
+          ...rs.responses
+        }
+      }
+    };
+
+    return res.json(certificateJson);
+  } catch (err) {
+    console.error('Error generating certificate JSON:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
+
+// POST: publish draft (optional for later)
+export async function publishCertificate(req, res) {
+  const user = await getCurrentUser(req);
+  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+  const { certificateId } = req.params;
+  const rs = await Certificate.findById(certificateId);
+  if (!rs) return res.status(404).json({ error: 'Not found' });
+  if (!(user.admin || String(rs.userId) === String(user._id))) return res.status(403).json({ error: 'Forbidden' });
+  try {
+    const survey = await LevelCalculationService.loadSurveyById(rs.surveyId);
+    const lvl = await LevelCalculationService.calculateLevel(rs, survey);
+    rs.attainedLevel = lvl;
+    rs.attainedIndex = lvl;
+  } catch (_) {}
+  rs.state = 'published';
+  await rs.save();
+  return res.json({ ok: true, attainedLevel: rs.attainedLevel });
+}
+
+export async function unpublishCertificate(req, res) {
+  const user = await getCurrentUser(req);
+  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+  const { certificateId } = req.params;
+  const rs = await Certificate.findById(certificateId);
+  if (!rs) return res.status(404).json({ error: 'Not found' });
+  if (!(user.admin || String(rs.userId) === String(user._id))) return res.status(403).json({ error: 'Forbidden' });
+  try {
+    const survey = await LevelCalculationService.loadSurveyById(rs.surveyId);
+    const lvl = await LevelCalculationService.calculateLevel(rs, survey);
+    rs.attainedLevel = lvl;
+    rs.attainedIndex = lvl;
+  } catch (_) {}
+  rs.state = 'draft';
+  await rs.save();
+  return res.json({ ok: true, attainedLevel: rs.attainedLevel });
+}
+
+export async function saveResponsesPatch(req, res) {
+  const user = await getCurrentUser(req);
+  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+  const { certificateId } = req.params;
+  const { responses } = req.body || {};
+  const rs = await Certificate.findById(certificateId);
+  if (!rs) return res.status(404).json({ error: 'Not found' });
+  if (!(user.admin || String(rs.userId) === String(user._id))) return res.status(403).json({ error: 'Forbidden' });
+  if (!rs.canModify()) return res.status(409).json({ error: 'Not editable' });
+
+  if (responses && typeof responses === 'object') {
+    // responses is a flat map of name -> value
+    for (const [name, value] of Object.entries(responses)) {
+      if (value !== null && value !== undefined) {
+        rs.setResponse(name, value);
+      }
+    }
+  }
+  // Recalculate level/progress using current survey
+  try {
+    const survey = await LevelCalculationService.loadSurveyById(rs.surveyId);
+    const newLevel = await LevelCalculationService.calculateLevel(rs, survey);
+    rs.attainedLevel = newLevel;
+    rs.attainedIndex = newLevel;
+    console.log('newLevel', newLevel);
+    await rs.save();
+    const progress = await LevelCalculationService.calculateProgress(rs, survey);
+    return res.json({ ok: true, attainedLevel: rs.attainedLevel, progress });
+  } catch (e) {
+    await rs.save();
+    return res.json({ ok: true, attainedLevel: rs.attainedLevel });
   }
 }

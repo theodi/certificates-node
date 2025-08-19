@@ -1,5 +1,5 @@
 import Survey from '../models/Survey.js';
-import ResponseSet from '../models/ResponseSet.js';
+import Certificate from '../models/Certificate.js';
 
 export async function listSurveysPage(req, res, next) {
   try {
@@ -24,7 +24,7 @@ export async function listSurveysData(req, res, next) {
 
     // Pre-compute published certificate counts per survey
     const surveyIds = surveys.map(s => s._id);
-    const publishedCountsRaw = await ResponseSet.aggregate([
+    const publishedCountsRaw = await Certificate.aggregate([
       { $match: { state: 'published', surveyId: { $in: surveyIds } } },
       { $group: { _id: '$surveyId', count: { $sum: 1 } } }
     ]);
@@ -142,4 +142,25 @@ export async function surveyCriteriaPage(req, res, next) {
   }
 }
 
-
+// GET JSON: survey definition by id
+export async function getSurveyJson(req, res) {
+  const { surveyId } = req.params;
+  const survey = await Survey.findById(surveyId).lean();
+  if (!survey) return res.status(404).json({ error: 'Survey not found' });
+  const pages = (survey.sections || []).map((section) => ({
+    name: section.name,
+    title: section.title,
+    description: section.description,
+    elements: section.elements || []
+  }));
+  return res.json({
+    _id: String(survey._id),
+    localle: survey.localle,
+    localleText: survey.localleText,
+    title: survey.title,
+    fullTitle: survey.fullTitle,
+    description: survey.description,
+    levels: survey.levels,
+    pages
+  });
+}

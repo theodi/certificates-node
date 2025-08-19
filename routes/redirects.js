@@ -33,11 +33,11 @@ router.get('/:locale/datasets/:datasetId/certificates', (req, res) => {
   res.redirect(301, `/datasets/${req.params.datasetId}/certificates`);
 });
 
-router.get('/:locale/datasets/:datasetId/certificates/:responseSetId', (req, res) => {
-  res.redirect(301, `/datasets/${req.params.datasetId}/certificates/${req.params.responseSetId}`);
+router.get('/:locale/datasets/:datasetId/certificates/:certificateId', (req, res) => {
+  res.redirect(301, `/datasets/${req.params.datasetId}/certificates/${req.params.certificateId}`);
 });
-router.get('/:locale/datasets/:datasetId/certificates/:responseSetId.json', (req, res) => {
-  res.redirect(301, `/datasets/${req.params.datasetId}/certificates/${req.params.responseSetId}.json`);
+router.get('/:locale/datasets/:datasetId/certificates/:certificateId.json', (req, res) => {
+  res.redirect(301, `/datasets/${req.params.datasetId}/certificates/${req.params.certificateId}.json`);
 });
 router.get('/:locale/datasets/:datasetId/certificate.json', (req, res) => {
   res.redirect(301, `/datasets/${req.params.datasetId}/certificate.json`);

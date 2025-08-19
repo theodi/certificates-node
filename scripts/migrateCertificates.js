@@ -5,7 +5,7 @@ dotenv.config({ path: './.env' });
 import mysql from 'mysql2/promise';
 import mongoose from 'mongoose';
 import User from '../models/User.js';
-import ResponseSet from '../models/ResponseSet.js';
+import Certificate from '../models/Certificate.js';
 import Survey from '../models/Survey.js';
 import Dataset from '../models/Dataset.js';
 import { pathToFileURL } from 'url';
@@ -20,7 +20,7 @@ class CertificateMigration {
     this.mysqlConnection = null;
     this.failures = {
       datasets: [], // { datasetId, error }
-      responseSets: [] // { datasetId, responseSetId, reason, details }
+      certificates: [] // { datasetId, certificateId, reason, details }
     };
   }
 
@@ -138,7 +138,7 @@ class CertificateMigration {
 
     for (const row of rsList) {
       // Skip if already imported by legacy response set id
-      const already = await ResponseSet.exists({ legacyId: row.id });
+      const already = await Certificate.exists({ legacyId: row.id });
       if (already) {
         if (this.verbose) console.log(`  Skipping response set ${row.id}: already imported`);
         continue;
@@ -146,9 +146,9 @@ class CertificateMigration {
       // Ensure user for this response set
       const rsUserId = await this.ensureUser(row.user_id);
       if (!rsUserId) {
-        this.failures.responseSets.push({
+        this.failures.certificates.push({
           datasetId: legacyDatasetId,
-          responseSetId: row.id,
+          certificateId: row.id,
           reason: 'missing_user',
           details: `User ${row.user_id} not found`
         });
@@ -169,9 +169,9 @@ class CertificateMigration {
       // Build a quick map of element types from the imported survey
       const surveyDoc = await Survey.findOne({ legacyId: row.survey_id }).select('_id sections').lean();
       if (!surveyDoc) {
-        this.failures.responseSets.push({
+        this.failures.certificates.push({
           datasetId: legacyDatasetId,
-          responseSetId: row.id,
+          certificateId: row.id,
           reason: 'missing_survey',
           details: `Survey ${row.survey_id} not imported`
         });
@@ -260,7 +260,7 @@ class CertificateMigration {
         }
       }
 
-      const responseSet = new ResponseSet({
+      const certificate = new Certificate({
         _id: new mongoose.Types.ObjectId(),
         legacyId: row.id,
         datasetId: datasetDoc._id,
@@ -279,12 +279,12 @@ class CertificateMigration {
       });
 
       try {
-        await responseSet.save();
-        this.logMigration('ResponseSet', row.id, responseSet._id);
+        await certificate.save();
+        this.logMigration('Certificate', row.id, certificate._id);
       } catch (err) {
-        this.failures.responseSets.push({
+        this.failures.certificates.push({
           datasetId: legacyDatasetId,
-          responseSetId: row.id,
+          certificateId: row.id,
           reason: 'save_error',
           details: err?.message || String(err)
         });
@@ -347,7 +347,7 @@ class CertificateMigration {
   }
 
   printFailures() {
-    const { datasets, responseSets } = this.failures;
+    const { datasets, certificates } = this.failures;
     console.log('\nFailures Summary:');
     console.log('=================');
     console.log(`Datasets failed: ${datasets.length}`);
@@ -356,10 +356,10 @@ class CertificateMigration {
         console.log(`  - Dataset ${f.datasetId}: ${f.error}`);
       }
     }
-    console.log(`Response sets skipped/failed: ${responseSets.length}`);
-    if (responseSets.length) {
+    console.log(`Certificates skipped/failed: ${certificates.length}`);
+    if (certificates.length) {
       // Group by reason for readability
-      const byReason = responseSets.reduce((acc, f) => {
+      const byReason = certificates.reduce((acc, f) => {
         acc[f.reason] = acc[f.reason] || [];
         acc[f.reason].push(f);
         return acc;
@@ -367,7 +367,7 @@ class CertificateMigration {
       for (const [reason, items] of Object.entries(byReason)) {
         console.log(`  - ${reason}: ${items.length}`);
         for (const f of items.slice(0, 50)) { // show first 50 to keep output manageable
-          console.log(`      dataset ${f.datasetId}, response_set ${f.responseSetId}${f.details ? ` - ${f.details}` : ''}`);
+          console.log(`      dataset ${f.datasetId}, certificate ${f.certificateId}${f.details ? ` - ${f.details}` : ''}`);
         }
         if (items.length > 50) {
           console.log(`      ...and ${items.length - 50} more`);

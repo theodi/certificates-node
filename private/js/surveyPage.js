@@ -9,15 +9,15 @@ import { calculateProgress, navigateToQuestion } from './progressTracker.js';
   document.addEventListener('DOMContentLoaded', initSurvey);
 
   async function initSurvey() {
-    const { responseSetId, surveyId, datasetId } = window.surveyConfig;
+    const { certificateId, surveyId, datasetId } = window.surveyConfig;
     clearForm();
 
     const [schema, rs] = await Promise.all([
       fetch(`/surveys/${surveyId}`, { headers: { Accept: 'application/json' } }).then(r => r.json()),
-      fetch(`/datasets/${encodeURIComponent(datasetId)}/certificates/${responseSetId}`, { headers: { Accept: 'application/json' } }).then(r => r.json()),
+      fetch(`/datasets/${encodeURIComponent(datasetId)}/certificates/${certificateId}`, { headers: { Accept: 'application/json' } }).then(r => r.json()),
     ]);
 
-    setupSurvey(schema, rs, datasetId, responseSetId);
+    setupSurvey(schema, rs, datasetId, certificateId);
   }
 
   function clearForm() {
@@ -26,7 +26,7 @@ import { calculateProgress, navigateToQuestion } from './progressTracker.js';
     $('form').show();
   }
 
-  function setupSurvey(schema, rs, datasetId, responseSetId) {
+  function setupSurvey(schema, rs, datasetId, certificateId) {
     try { Survey.surveyLocalization.supportedLocales = ['en']; } catch (_) {}
     survey = new Survey.Model(schema);
     try { survey.allowHtml = true; } catch (_) {}
@@ -51,7 +51,7 @@ import { calculateProgress, navigateToQuestion } from './progressTracker.js';
     // Create the survey header outside of SurveyJS
     createSurveyHeader(schema);
     buildSectionsNav(schema);
-    setupAutoSave(schemaQuestions, datasetId, responseSetId);
+    setupAutoSave(schemaQuestions, datasetId, certificateId);
     setupSurveyRendering(schemaQuestions, schema, initialData);
 
     $('#surveyElement').Survey({ model: survey });
@@ -94,10 +94,9 @@ import { calculateProgress, navigateToQuestion } from './progressTracker.js';
   function extractInitialData(rs) {
     const initialData = {};
     // Check if we have the new structure (dataset contains responses) or old structure (responses directly)
-    const responseData = rs?.certificate?.dataset || rs?.responses;
-    console.log(responseData);
-    if (responseData) {
-      for (const [k, v] of Object.entries(responseData)) {
+    const certificateData = rs?.certificate?.dataset || rs?.responses;
+    if (certificateData) {
+      for (const [k, v] of Object.entries(certificateData)) {
         if (v !== null && v !== undefined) {
           // Convert flattened arrays back to SurveyJS format for dynamic panels
           if (Array.isArray(v) && v.length > 0 && v.every(item => typeof item === 'string')) {
@@ -131,7 +130,7 @@ import { calculateProgress, navigateToQuestion } from './progressTracker.js';
     });
   }
 
-  function setupAutoSave(schemaQuestions, datasetId, responseSetId) {
+  function setupAutoSave(schemaQuestions, datasetId, certificateId) {
     const saveQueue = new Map();
     let saveTimer = null;
 
@@ -148,7 +147,7 @@ import { calculateProgress, navigateToQuestion } from './progressTracker.js';
         const payload = { responses: Object.fromEntries(saveQueue.entries()) };
         saveQueue.clear();
         try {
-          const resp = await fetch(`/datasets/${encodeURIComponent(datasetId)}/certificates/${responseSetId}`, {
+          const resp = await fetch(`/datasets/${encodeURIComponent(datasetId)}/certificates/${certificateId}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
             body: JSON.stringify(payload),

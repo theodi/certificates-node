@@ -46,12 +46,6 @@ userSchema.virtual('datasets', {
   foreignField: 'userId'
 });
 
-userSchema.virtual('responseSets', {
-  ref: 'ResponseSet',
-  localField: '_id',
-  foreignField: 'userId'
-});
-
 userSchema.virtual('certificates', {
   ref: 'Certificate',
   localField: '_id',
@@ -69,10 +63,6 @@ userSchema.methods.getDisplayName = function() {
 
 userSchema.methods.getDatasets = function() {
   return this.model('Dataset').find({ userId: this._id });
-};
-
-userSchema.methods.getResponseSets = function() {
-  return this.model('ResponseSet').find({ userId: this._id });
 };
 
 userSchema.methods.getCertificates = function() {

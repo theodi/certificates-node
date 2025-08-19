@@ -1,6 +1,5 @@
 import express from 'express';
-import { listSurveysPage, listSurveysData, surveyCriteriaPage } from '../controllers/surveys.js';
-import { getSurveyJson } from '../controllers/responseApi.js';
+import { listSurveysPage, listSurveysData, surveyCriteriaPage, getSurveyJson } from '../controllers/surveys.js';
 
 const router = express.Router();
 
