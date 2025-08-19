@@ -18,18 +18,16 @@ A modern, streamlined Node.js implementation of the Open Data Certificate questi
 Survey (Questionnaire Definition)
 ├── Sections (Legal, Technical, etc.)
 │   └── Elements (Questions & Logic)
-    
-ResponseSet (User's Questionnaire Attempt)
-├── Responses (Individual Answers)
-└── Achievement Level (0-4)
-
-Certificate (Achievement Record)
-├── ResponseSet Reference
-└── Publication Status
 
 Dataset (Data Being Certified)
-├── Metadata
+├── Metadata (title, URL, etc.)
 └── Owner Information
+
+Certificate (Questionnaire Attempt + Result)
+├── References: surveyId, datasetId, userId
+├── Responses (Map of question → answer)
+├── Achievement Level (0–4)
+└── Publication State (draft, published, archived, superseded)
 ```
 
 ### Achievement Levels
@@ -155,11 +153,9 @@ The certificate view reads the survey’s `levels` to display the badge and desc
 │   ├── Survey.js
 │   ├── User.js
 │   ├── Dataset.js
-│   ├── ResponseSet.js
 │   └── Certificate.js
 ├── controllers/            # Web controllers
 │   ├── certificates.js
-│   ├── responseSets.js
 │   └── surveys.js
 ├── services/               # Business logic
 │   └── levelCalculationService.js
@@ -191,8 +187,7 @@ The migration script extracts data from the original Ruby MySQL database and tra
 1. **Surveys**: Converts survey definitions to MongoDB format
 2. **Users**: Migrates user accounts and preferences
 3. **Datasets**: Transfers dataset metadata
-4. **Response Sets**: Converts questionnaire responses to new format
-5. **Certificates**: Migrates achievement records
+4. **Certificates**: Converts questionnaire responses and achievement records
 
 ### Test Migration Features
 The migration script includes test mode options to validate the migration process:
@@ -245,7 +240,7 @@ npm run migrate:certificates:full          # migrate all datasets with published
 - `GET /datasets` → Browse published datasets (HTML) or JSON list via content negotiation
 - `GET /datasets/:id` → Dataset drill-down (HTML) or JSON via content negotiation
 - `GET /datasets/:datasetId/certificates` → List or redirect to a certificate for dataset
-- `GET /datasets/:datasetId/certificates/:responseSetId` → Render a certificate
+- `GET /datasets/:datasetId/certificates/:certificateId` → Render a certificate
 
 ### Authenticated web routes
 - `GET /datasets/my` → “My Datasets” (HTML) or JSON via content negotiation (owner; all for admin)
@@ -253,7 +248,7 @@ npm run migrate:certificates:full          # migrate all datasets with published
 
 ### Legacy route redirects
 - `/:locale/datasets/:datasetId/certificates` → 301 → `/datasets/:datasetId/certificates`
-- `/:locale/datasets/:datasetId/certificates/:responseSetId` → 301 → `/datasets/:datasetId/certificates/:responseSetId`
+- `/:locale/datasets/:datasetId/certificates/:certificateId` → 301 → `/datasets/:datasetId/certificates/:certificateId`
 - `/:locale/datasets/:datasetId/certificate` → 301 → `/datasets/:datasetId/certificate`
 - `/:locale/datasets/:datasetId/certificate/embed` → 301 → `/datasets/:datasetId/certificate/embed`
 - `/:locale/datasets/:datasetId/certificate/badge.png` → 301 → `/datasets/:datasetId/certificate/badge.png`
