@@ -222,7 +222,7 @@ export async function renderCertificate(req, res, next) {
       publisher,
       summary: {
         title: (datasetTitleEntries.length ? datasetTitleEntries : datasetTitleFallback),
-        url: (datasetUrlEntries.length ? datasetUrlEntries : datasetUrl),
+        url: (datasetUrl ? [{ text: datasetUrl, isLink: true }] : []),
         license: licenseEntries,
         releaseType: releaseTypeEntries
       },
@@ -756,6 +756,67 @@ export async function unpublishCertificate(req, res) {
   return res.json({ ok: true, attainedLevel: rs.attainedLevel });
 }
 
+// Normalize incoming response values so we never persist empty objects in arrays
+function normalizeResponseValue(rawValue) {
+  if (rawValue === null || rawValue === undefined) return undefined;
+
+  // Arrays: flatten to primitives and drop empty entries
+  if (Array.isArray(rawValue)) {
+    const normalized = [];
+    for (const item of rawValue) {
+      if (item === null || item === undefined) continue;
+      if (typeof item === 'string') {
+        const t = item.trim();
+        if (t !== '') normalized.push(t);
+        continue;
+      }
+      if (typeof item === 'number' || typeof item === 'boolean') {
+        normalized.push(item);
+        continue;
+      }
+      if (Array.isArray(item)) {
+        // Rare nested arrays; flatten one level
+        for (const sub of item) {
+          if (sub === null || sub === undefined) continue;
+          if (typeof sub === 'string') {
+            const ts = sub.trim();
+            if (ts !== '') normalized.push(ts);
+          } else if (typeof sub === 'number' || typeof sub === 'boolean') {
+            normalized.push(sub);
+          }
+        }
+        continue;
+      }
+      if (typeof item === 'object') {
+        const candidate = item.item ?? item.url ?? item.value ?? item.text ?? null;
+        if (typeof candidate === 'string') {
+          const tc = candidate.trim();
+          if (tc !== '') normalized.push(tc);
+        } else if (typeof candidate === 'number' || typeof candidate === 'boolean') {
+          normalized.push(candidate);
+        }
+        continue;
+      }
+    }
+    return normalized; // May be [] – that's OK; better than [{}]
+  }
+
+  // Objects: try to extract a meaningful scalar value; otherwise treat as empty
+  if (typeof rawValue === 'object') {
+    const candidate = rawValue.item ?? rawValue.url ?? rawValue.value ?? rawValue.text ?? null;
+    if (typeof candidate === 'string') {
+      const t = candidate.trim();
+      return t === '' ? undefined : t;
+    }
+    if (typeof candidate === 'number' || typeof candidate === 'boolean') return candidate;
+    return undefined;
+  }
+
+  // Primitives
+  if (typeof rawValue === 'string') return rawValue.trim();
+  return rawValue;
+}
+
 export async function saveResponsesPatch(req, res) {
   const user = await getCurrentUser(req);
   if (!user) return res.status(401).json({ error: 'Unauthorized' });
@@ -769,9 +830,15 @@ export async function saveResponsesPatch(req, res) {
   if (responses && typeof responses === 'object') {
     // responses is a flat map of name -> value
     for (const [name, value] of Object.entries(responses)) {
-      if (value !== null && value !== undefined) {
-        rs.setResponse(name, value);
+      const normalized = normalizeResponseValue(value);
+      if (Array.isArray(value)) {
+        // Always set arrays after normalization (may be [])
+        rs.setResponse(name, normalized);
+      } else if (normalized !== undefined) {
+        rs.setResponse(name, normalized);
       }
+      // If normalized is undefined and value is non-array, skip to avoid
+      // overwriting with meaningless data; client should send explicit clears
     }
   }
   // Recalculate level/progress using current survey

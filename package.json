@@ -1,6 +1,6 @@
 {
   "name": "open-data-certificate-node",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Modern Node.js implementation of the Open Data Certificate questionnaire system",
   "main": "index.js",
   "type": "module",
